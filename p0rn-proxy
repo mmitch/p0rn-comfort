@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-proxy,v 1.17 2004-05-16 19:32:13 mitch Exp $
+# $Id: p0rn-proxy,v 1.18 2004-05-16 19:32:47 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -158,7 +158,7 @@ p0rn-proxy was written by Christian Garbs <F<mitch@cgarbs.de>>.
 
 =head1 AVAILABILITY
 
-Look for updated at L<http://www.cgarbs.de/p0rn-comfort.en.html>.
+Look for updates at L<http://www.cgarbs.de/p0rn-comfort.en.html>.
 
 =head1 COPYRIGHT
 
@@ -169,7 +169,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.3-dev";
 my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
 my ($ua, $thumbs, $pics, $downs);
