@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.26 2004-11-20 20:56:56 mitch Exp $
+# $Id: p0rn-proxy,v 1.27 2004-11-21 14:28:54 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -143,7 +143,7 @@ L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
 =head1 MODULES NEEDED
 
  use AppConfig;
- use DBM:Deep;
+ use DBM::Deep;
  use HTTP::Daemon;
  use LWP::UserAgent;
 
@@ -176,7 +176,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $URLBASE = $Static::PROXY_CTRL_BASE;
 my ($ua, $thumbs, $pics, $downs);
 
