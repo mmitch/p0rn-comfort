@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.8 2004-11-20 20:41:22 mitch Exp $
+# $Id: Makefile,v 1.9 2004-11-20 20:42:38 mitch Exp $
 #
 # dist-script for p0rn-comfort
 #
@@ -12,6 +12,7 @@ TARGZ=$(NAME)-$(VERSION).tar.gz
 
 PERLSCRIPTS=p0rn-bot p0rn-dbadd p0rn-dbdel p0rn-dblist p0rn-download p0rn-proxy p0rn-dbrestore
 SHELLSCRIPTS=p0rn-dbdump p0rn-grab
+MODULES=DB Static
 BINARIES=$(PERLSCRIPTS) $(SHELLSCRIPTS)
 OTHERFILES=ChangeLog README COPYRIGHT
 
@@ -33,7 +34,7 @@ dist:
 	mkdir $(DISTDIR)/out
 	mkdir $(DISTDIR)/$(DOCDIR)
 	cp $(BINARIES) $(OTHERFILES) $(DISTDIR)/
-	cp P0rn/DB.pm $(DISTDIR)/P0rn/
+	for FILE in $(MODULES); do cp P0rn/$$FILE.pm $(DISTDIR)/P0rn/; done
 	cp $(DOCDIR)/* $(DISTDIR)/$(DOCDIR)
 	tar -c $(DISTDIR) -zvf $(TARGZ)
 	rm -rf $(DISTDIR)
