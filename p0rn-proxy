@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-# $Id: p0rn-proxy,v 1.1 2004-05-09 08:13:13 mitch Exp $
+# $Id: p0rn-proxy,v 1.2 2004-05-09 09:29:28 mitch Exp $
 
-# pr0nxy -- a proxy for comfortably browsing pr0n
+# p0rn-proxy -- a proxy for comfortably browsing pr0n
 #
 # 2004 (C) by Christian Garbs <mitch@cgarbs.de>
 #
@@ -43,6 +43,7 @@ sub execute_proxy_command($)
 # execute user commands
 {
     my $request = shift;
+    my $response = HTTP::Response->new( RC_OK, 'p0rn proxy response' );
     my $uri = $request->uri();
     my $content = '<html><head><title>p0rn proxy response</title></head><body>';
 
@@ -54,6 +55,7 @@ sub execute_proxy_command($)
 	if ($cmd eq 'mark_as_thumb' ) {
 	    $thumbs->{$urishort} = 0;
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a thumbnail page.";
+	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
 	} elsif ($cmd eq 'single_thumb' ) {
 	    $thumbs->{$urishort} = 1;
@@ -66,6 +68,7 @@ sub execute_proxy_command($)
 	} elsif ($cmd eq 'mark_as_pic' ) {
 	    $pics->{$urishort} = 0;
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page.";
+	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
 	} elsif ($cmd eq 'single_pic' ) {
 	    $pics->{$urishort} = 1;
@@ -84,6 +87,7 @@ sub execute_proxy_command($)
 		$downs->{$urishort} = 0;
 		$content .= "It has been queued for download.";
 	    }
+	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
 	} else {
 	    $content .= "unknown command <tt>$cmd</tt>: <tt>$uri</tt>";
@@ -94,7 +98,6 @@ sub execute_proxy_command($)
     }
 
     $content .= '</body></html>';
-    my $response = HTTP::Response->new( RC_OK, 'p0rn proxy response' );
     $response->content($content);
 
     return $response;
@@ -129,9 +132,9 @@ sub send_proxyauth()
 ######[ Main program ]
 #
    
-my $CVSVERSION = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-my $VERSION = "2.0.5";
-print "this is pr0nxy ${VERSION}/${CVSVERSION}\n";
+my $CVSVERSION = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $VERSION = "0.0.1";
+print "this is p0rn-proxy ${VERSION}/${CVSVERSION}\n";
 
 # define configuration options
 my $config = AppConfig->new( { CASE => 1 } );
