@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dblist,v 1.3 2004-05-14 19:11:50 mitch Exp $
+# $Id: p0rn-dblist,v 1.4 2004-05-14 20:37:02 mitch Exp $
 #
 # list tables from p0rn.db
 #
@@ -49,9 +49,9 @@ URL per line.
 
 All data is stored in a database.  By default, it is located in
 B<./p0rn.db> (yes, that's the directory from which you're starting
-p0rn-proxy).  Is you want to change this, set the environment variable
-B<P0RNDBLOCATION> (the second letter is a zero) to another path and
-filename.
+p0rn-dblist).  Is you want to change this, set the environment
+variable B<P0RNDBLOCATION> (the second letter is a zero) to another
+path and filename.
 
 =head1 SEE ALSO
 

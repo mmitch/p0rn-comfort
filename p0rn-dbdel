@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dbdel,v 1.2 2004-05-14 19:12:19 mitch Exp $
+# $Id: p0rn-dbdel,v 1.3 2004-05-14 20:36:40 mitch Exp $
 #
 # remove links from p0rn.db
 #
@@ -36,7 +36,7 @@ whitespace.
 
 All data is stored in a database.  By default, it is located in
 B<./p0rn.db> (yes, that's the directory from which you're starting
-p0rn-proxy).  Is you want to change this, set the environment variable
+p0rn-dbdel).  Is you want to change this, set the environment variable
 B<P0RNDBLOCATION> (the second letter is a zero) to another path and
 filename.
 
