@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: p0rn-proxy,v 1.12 2004-05-14 18:57:10 mitch Exp $
+# $Id: p0rn-proxy,v 1.13 2004-05-14 19:05:52 mitch Exp $
 
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -131,6 +131,10 @@ p0rn-proxy).  Is you want to change this, set the environment variable
 B<P0RNDBLOCATION> (the second letter is a zero) to another path and
 filename.
 
+=head1 SEE ALSO
+
+L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
+
 =head1 MODULES NEEDED
 
  use AppConfig;
@@ -163,7 +167,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.2";
 my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
 my ($ua, $thumbs, $pics, $downs);
