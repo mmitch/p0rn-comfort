@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.7 2004-11-20 19:56:20 mitch Exp $
+# $Id: Makefile,v 1.8 2004-11-20 20:41:22 mitch Exp $
 #
 # dist-script for p0rn-comfort
 #
@@ -10,7 +10,7 @@ VERSION=$(shell grep 'our \$$VERSION' P0rn/Static.pm | cut -d \" -f 2)
 DISTDIR=$(NAME)-$(VERSION)
 TARGZ=$(NAME)-$(VERSION).tar.gz
 
-PERLSCRIPTS=p0rn-dbadd p0rn-dbdel p0rn-dblist p0rn-download p0rn-proxy p0rn-dbrestore
+PERLSCRIPTS=p0rn-bot p0rn-dbadd p0rn-dbdel p0rn-dblist p0rn-download p0rn-proxy p0rn-dbrestore
 SHELLSCRIPTS=p0rn-dbdump p0rn-grab
 BINARIES=$(PERLSCRIPTS) $(SHELLSCRIPTS)
 OTHERFILES=ChangeLog README COPYRIGHT
