@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: p0rn-grab,v 1.1 2004-05-09 11:22:22 mitch Exp $
+# $Id: p0rn-grab,v 1.2 2004-05-09 17:27:37 mitch Exp $
 #
 # download all images/videos from a given URL
 
@@ -26,7 +26,7 @@ lynx --dump $URL \
 | tac \
 | while read FILE; do
     NR=$(($NR + 1))
-    wget --user-agent="${USERAGENT}" --referer=$URL "$FILE"
+    wget -nv --user-agent="${USERAGENT}" --referer=$URL "$FILE"
     FILE=`basename "$FILE"`
     mv "$FILE" "$DOMAIN"-`printf %03d $NR`-"$FILE"
 done
