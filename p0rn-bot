@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.7 2004-11-19 17:23:59 mitch Exp $
+# $Id: p0rn-bot,v 1.8 2004-11-20 13:49:07 mitch Exp $
 #
 # download selected p0rn
 #
@@ -9,6 +9,7 @@
 use strict;
 use LWP::UserAgent;
 use HTML::Parser;
+use URI;
 
 my $is_thumb = 'http://www.cgarbs.de/PROXYCONTROL/mark_as_thumb/';
 my $is_pic = 'http://www.cgarbs.de/PROXYCONTROL/mark_as_download/';
@@ -42,11 +43,7 @@ sub start_handler
     return if $link =~ /^mailto:/;
     return if $link =~ /^\s*$/;
     
-    if ($base !~ m,/$, and $link !~ m,^/,) {
-	$link = '/' . $link;
-    }
-
-    $link = $base . $link unless $link =~ m,^http://,;
+    $link = URI->new_abs($link, $base)->as_string;
 
     if ($link =~ /\.(jpe?g|wmv|mpe?g|avi)$/i) {
 	push @pics, $link;
