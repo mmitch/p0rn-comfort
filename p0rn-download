@@ -1,11 +1,70 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.4 2004-05-11 15:59:09 mitch Exp $
+# $Id: p0rn-download,v 1.5 2004-05-14 20:49:58 mitch Exp $
 #
 # download selected p0rn
 #
 use strict;
 use BerkeleyDB::Hash;
 use P0rn::DB;
+
+=head1 NAME
+
+p0rn-download - download URLs queued in p0rn database
+
+=head1 SYNOPSIS
+
+B<p0rn-download>
+
+=head1 OVERVIEW
+
+p0rn-download starts to download the URLs queued in the p0rn database.
+
+=head1 DESCRIPTION
+
+p0rn-download starts a massive parallel download via L<p0rn-grab(1)>.
+Downloaded files appear in B<./out>.
+
+=head1 FILES
+
+All data is stored in a database.  By default, it is located in
+B<./p0rn.db> (yes, that's the directory from which you're starting
+p0rn-download).  Is you want to change this, set the environment
+variable B<P0RNDBLOCATION> (the second letter is a zero) to another
+path and filename.
+
+=head1 SEE ALSO
+
+L<p0rn-proxy(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>, L<p0rn-grab(1)>
+
+=head1 MODULES NEEDED
+
+ use BerkeleyDB::Hash;
+
+This module can be obtained at <F<http://www.cpan.org>>.
+
+=head1 PROGRAMS NEEDED
+
+=over
+
+=item lynx: L<http://lynx.browser.org/>
+
+=item wget: L<http://wget.sunsite.dk/>
+
+=back
+
+=head1 BUGS
+
+Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
+
+=head1 AUTHOR
+
+p0rn-download was written by Christian Garbs <F<mitch@cgarbs.de>>.
+
+=head1 COPYRIGHT
+
+p0rn-download is licensed under the GNU GPL.
+
+=cut
 
 my $wait_after_download = 10;
 my $wait_after_cycle    = 30;
