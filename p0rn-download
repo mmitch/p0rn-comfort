@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.7 2004-05-16 19:33:53 mitch Exp $
+# $Id: p0rn-download,v 1.8 2004-05-18 17:56:56 mitch Exp $
 #
 # download selected p0rn
 #
@@ -75,9 +75,6 @@ p0rn-download is licensed under the GNU GPL.
 
 my $wait_after_download = 10;
 my $wait_after_cycle    = 30;
-
-my $hash = opendb('downz');
-
 my $done_something = 1;
 
 $SIG{CHLD} = 'IGNORE';
@@ -86,6 +83,7 @@ while ($done_something) {
 
     $done_something = 0;
     
+    my $hash = opendb('downz');
     foreach my $url (keys %{$hash}) {
 	
 	if ($hash->{$url} == 0) {
@@ -93,6 +91,7 @@ while ($done_something) {
 	    if (!fork()) {
 		warn "[[ START $url ]]\n";
 		my $myhash = opendb('downz');
+		exit if ($myhash->{$url});
 		$myhash->{$url} = 1;
 		untie %{$myhash};
 
@@ -106,16 +105,16 @@ while ($done_something) {
 	    }
 
 	    sleep $wait_after_download;
+	    $done_something = 1;
 
 	}
 
     }
-
+    untie %{$hash};
     sleep $wait_after_cycle;
 
 }
 
-untie %{$hash};
 
 wait;
 warn "\n[[ FINISHED. ]]\n\n";
