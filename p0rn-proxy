@@ -1,5 +1,5 @@
-#!/usr/bin/perl -w
-# $Id: p0rn-proxy,v 1.20 2004-05-21 19:15:02 mitch Exp $
+#!/usr/bin/perl
+# $Id: p0rn-proxy,v 1.21 2004-05-26 09:06:09 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -8,7 +8,6 @@
 
 use strict;
 use AppConfig qw(:expand);
-use BerkeleyDB::Hash;
 use HTTP::Daemon;
 use HTTP::Response;
 use HTTP::Status;
@@ -136,7 +135,7 @@ L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
 =head1 MODULES NEEDED
 
  use AppConfig;
- use BerkeleyDB::Hash;
+ use DBM:Deep;
  use HTTP::Daemon;
  use LWP::UserAgent;
 
@@ -169,7 +168,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.3-dev";
 my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
 my ($ua, $thumbs, $pics, $downs);
@@ -209,6 +208,7 @@ sub execute_proxy_command($)
 	} elsif ($cmd eq 'single_thumb' ) {
 	    $thumbs->{$urishort} = 1;
 	    $content .= "<a href=\"$uri\">$urishort</a> (thumbnail) can now be accessed once.";
+	    $response->header(refresh => "1; $uri");
 	    
 	} elsif ($cmd eq 'unmark_as_thumb' ) {
 	    delete $thumbs->{$urishort};
@@ -222,6 +222,7 @@ sub execute_proxy_command($)
 	} elsif ($cmd eq 'single_pic' ) {
 	    $pics->{$urishort} = 1;
 	    $content .= "<a href=\"$uri\">$urishort</a> (picture) can now be accessed once.";
+	    $response->header(refresh => "1; $uri");
 	    
 	} elsif ($cmd eq 'unmark_as_pic' ) {
 	    delete $pics->{$urishort};
@@ -298,6 +299,109 @@ sub execute_proxy_command($)
 
     $content .= '</body></html>';
     $response->content($content);
+
+    return $response;
+}
+
+sub handle_request($)
+# handle an HTTP request
+{
+    my $request = shift;
+    my $response;
+    my $status = '..';
+    
+    # keine gezippten Daten, wir wollen im HTML rumwurschteln!
+    $request->header('Accept-Encoding' => 'identity');
+    
+    my $uri = $request->uri();
+    
+    if ($uri =~ m,^$URLBASE/,) {
+	
+	$response = execute_proxy_command($request);
+	$status = "CT";
+	
+    } else {
+	
+	my $urishort = shorten_uri($uri);
+	
+	# check for thumbsites
+	if (exists $thumbs->{$urishort} and ! $thumbs->{$urishort} ) {
+	    
+	    # return error page
+	    my $content = << "EOF";
+<html><head><title>thumbnail page</title></head><body>
+<a href="$uri">$urishort</a> is considered a thumbnail page and thus not displayed.<br>[
+<a href="$URLBASE/single_thumb/$uri">access once</a>
+| <a href="$URLBASE/unmark_as_thumb/$uri">access always</a>
+]</body></html>
+EOF
+;
+	    $response = HTTP::Response->new( RC_OK, 'thumbnail page!' );
+	    $response->content( $content );
+	    $status = "TH";
+	    
+	} else {
+	    
+	    # check for picsites
+	    if (exists $pics->{$urishort} and ! $pics->{$urishort} ) {
+		
+		# return error page
+		my $content = << "EOF";
+<html><head><title>already seen</title></head><body>
+<a href="$uri">$urishort</a> is considered an already seen picture page and thus not displayed.<br>[
+<a href="$URLBASE/single_pic/$uri">access once</a>
+| <a href="$URLBASE/unmark_as_pic/$uri">access always</a>
+]</body></html>
+EOF
+;
+		$response = HTTP::Response->new( RC_OK, 'already seen picture page!' );
+		$response->content( $content );
+		$status = "PI";
+		
+	    } else {
+		
+		if (exists $thumbs->{$uri}) {
+		    $thumbs->{$uri}--;
+		}
+		
+		if (exists $pics->{$uri}) {
+		    $pics->{$uri}--;
+		}
+		
+		# do the HTTP request
+		$response = $ua->simple_request($request);
+		
+		$status = "ok";
+		
+		# mangle HTML pages
+		if ( lc substr ($response->content_type(), 0, 9) eq "text/html" ) {
+		    my $content = $response->content();
+		    
+		    my $linkline = '<p align="center">' .
+			'[ th: <a target="_top" href="'."$URLBASE/mark_as_thumb/$uri".'">mark as thumbnail page</a> ' .
+			'| ad: <a target="_top" href="'."$URLBASE/admin/_nouri_".'">proxy admin</a> ' .
+			'| pi: <a target="_top" href="'."$URLBASE/mark_as_pic/$uri".'">mark as picture page</a> ' .
+			'| do: <a target="_top" href="'."$URLBASE/mark_as_download/$uri".'">mark as picture page and download</a> ' .
+			']<br><br><p>';
+		    
+		    $content =~ s/<body([^>]*)>/<body$1>$linkline/i;
+		    
+		    $response->content($content);
+		    $status = "OK";
+		}
+		
+	    }
+	    
+	}
+	
+    }
+    
+    # print log message
+    # TODO: more flexible logging, activate debug via configuration variable
+    printf 
+	"%s  %s\n" ,
+	$status,
+	$uri ;
 
     return $response;
 }
@@ -395,126 +499,14 @@ print "- proxy started on ".$config->addr().":".$config->port()."\n";
 #  -> possible SIGPIPES when browser aborts request)
 $SIG{CHLD} = 'IGNORE';
 
-my $request = 0;
 while (my $conn = $proxy->accept) {
-    $request++;
-    if ($request > $reload_after) {
-	$request = 0;
-	untie %{$thumbs};
-	$thumbs = opendb('thumbz');
-	print "- thumbpages db reloaded\n";
-	untie %{$pics};
-	$pics = opendb('picz');
-	print "- picpages db reloaded\n";
-	untie %{$downs};
-	$downs = opendb('downz');
-	print "- download db reloaded\n";
-    }
     if (! fork()) {
 	# CHILD
 	while (my $request = $conn->get_request) {
-	    my $response;
-	    my $status = '..';
-
-	    # keine gezippten Daten, wir wollen im HTML rumwurschteln!
-	    $request->header('Accept-Encoding' => 'identity');
-
-	    my $uri = $request->uri();
-
-	    if ($uri =~ m,^$URLBASE/,) {
-
-		$response = execute_proxy_command($request);
-		$status = "CT";
-
-	    } else {
-		
-		my $urishort = shorten_uri($uri);
-		
-		# check for thumbsites
-		if (exists $thumbs->{$urishort} and ! $thumbs->{$urishort} ) {
-		    
-		    # return error page
-		    my $content = << "EOF";
-<html><head><title>thumbnail page</title></head><body>
-<a href="$uri">$urishort</a> is considered a thumbnail page and thus not displayed.<br>
-[ <a href="$URLBASE/single_thumb/$uri">access once</a>
-| <a href="$URLBASE/unmark_as_thumb/$uri">access always</a>
-]</body></html>
-EOF
-;
-		    $response = HTTP::Response->new( RC_OK, 'thumbnail page!' );
-		    $response->content( $content );
-		    $status = "TH";
-		    
-		} else {
-		    
-		    # check for picsites
-		    if (exists $pics->{$urishort} and ! $pics->{$urishort} ) {
-			
-			# return error page
-			my $content = << "EOF";
-<html><head><title>already seen</title></head><body>
-<a href="$uri">$urishort</a> is considered an already seen picture page and thus not displayed.<br>
-[ <a href="$URLBASE/single_pic/$uri">access once</a>
-| <a href="$URLBASE/unmark_as_pic/$uri">access always</a>
-]</body></html>
-EOF
-;
-			$response = HTTP::Response->new( RC_OK, 'already seen picture page!' );
-			$response->content( $content );
-			$status = "PI";
-			
-		    } else {
-			
-			if (exists $thumbs->{$uri}) {
-			    $thumbs->{$uri}--;
-			}
-			
-			if (exists $pics->{$uri}) {
-			    $pics->{$uri}--;
-			}
-			
-			# do the HTTP request
-			$response = $ua->simple_request($request);
-			
-			$status = "ok";
-			
-			# mangle HTML pages
-			if ( lc substr ($response->content_type(), 0, 9) eq "text/html" ) {
-			    my $content = $response->content();
-			    
-			    my $linkline = '<p align="center">' .
-				'[ th: <a target="_top" href="'."$URLBASE/mark_as_thumb/$uri".'">mark as thumbnail page</a> ' .
-				'| ad: <a target="_top" href="'."$URLBASE/admin/_nouri_".'">proxy admin</a> ' .
-				'| pi: <a target="_top" href="'."$URLBASE/mark_as_pic/$uri".'">mark as picture page</a> ' .
-				'| do: <a target="_top" href="'."$URLBASE/mark_as_download/$uri".'">mark as picture page and download</a> ' .
-				']<br><br><p>';
-			    
-			    $content =~ s/<body([^>]*)>/<body$1>$linkline/i;
-			    
-			    $response->content($content);
-			    $status = "OK";
-			}
-			
-		    }
-		    
-		}
-
-	    }
-	    
-	    # print log message
-	    # TODO: more flexible logging, activate debug via configuration variable
-	    printf 
-#		"%s%s%s  %s\n" ,
-		"%s  %s\n" ,
-#		$gzip_requested    ? 'g' : ' ' ,
-#		$currently_gzipped ? 'g' : ' ' ,
-		$status,
-		$uri ;
-
-	    $conn->send_response($response);
-	    exit;
+	    $conn->send_response(handle_request($request));
 	}
+	$conn->close();
+	exit;
     }
     $conn->close;
 }
