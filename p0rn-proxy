@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: p0rn-proxy,v 1.5 2004-05-09 10:08:31 mitch Exp $
+# $Id: p0rn-proxy,v 1.6 2004-05-09 10:14:12 mitch Exp $
 
 # p0rn-proxy -- a proxy for comfortably browsing pr0n
 #
@@ -90,7 +90,7 @@ sub execute_proxy_command($)
 	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
 	} else {
-	    $content .= "unknown command <tt>$cmd</tt>: <tt>$uri</tt>";
+	    $content .= "unknown command <tt>$cmd</tt>: <tt>".$request->uri().'</tt>';
 	}
 
     } else {
@@ -132,7 +132,7 @@ sub send_proxyauth()
 ######[ Main program ]
 #
    
-my $CVSVERSION = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.1";
 print "this is p0rn-proxy ${VERSION}/${CVSVERSION}\n";
 
