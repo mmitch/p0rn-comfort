@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.23 2004-05-26 20:35:21 mitch Exp $
+# $Id: p0rn-proxy,v 1.24 2004-11-20 19:55:24 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -13,6 +13,7 @@ use HTTP::Response;
 use HTTP::Status;
 use LWP::UserAgent;
 use P0rn::DB;
+use P0rn::Static;
 
 =head1 NAME
 
@@ -168,9 +169,8 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-my $VERSION = "0.0.4-dev";
-my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
+my $CVSVERSION = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $URLBASE = $Static::PROXY_CTRL_BASE;
 my ($ua, $thumbs, $pics, $downs);
 
 my @downs = ( 'queued', 'running', 'finished' );
@@ -249,7 +249,7 @@ sub execute_proxy_command($)
 		"<li><a href=\"$URLBASE/list_thumbs/_nouri_\">list thumbnail pages</a></li>" .
 		"<li><a href=\"$URLBASE/list_pics/_nouri_\">list picture pages</a></li>" .
 		"<li><a href=\"$URLBASE/list_downs/_nouri_\">list download pages</a></li>" .
-		"</ul></ul><hr>p0rn-proxy $VERSION/$CVSVERSION</ul>";
+		"</ul></ul><hr>p0rn-proxy ${Static::VERSION}/$CVSVERSION</ul>";
 	    
 	} elsif ($cmd eq 'list_thumbs') {
 
@@ -427,7 +427,7 @@ EOF
 ######[ Main program ]
 #
    
-print "this is p0rn-proxy ${VERSION}/${CVSVERSION}\n";
+print "this is p0rn-proxy ${Static::VERSION}/${CVSVERSION}\n";
 
 # define configuration options
 my $config = AppConfig->new( { CASE => 1 } );
@@ -475,7 +475,7 @@ die "@_" unless defined $proxy;
 
 # create UserAgent
 $ua = LWP::UserAgent->new;
-$ua->agent("p0rn-proxy ${VERSION}/${CVSVERSION}");
+$ua->agent("p0rn-proxy ${Static::VERSION}/${CVSVERSION}");
 
 if ( defined $config->proxy()
      and $config->proxy() ne ""
