@@ -1,4 +1,4 @@
-# $Id: Static.pm,v 1.2 2004-11-20 21:08:08 mitch Exp $
+# $Id: Static.pm,v 1.3 2004-11-20 21:08:22 mitch Exp $
 #
 # global variables for p0rn-comfort
 #
@@ -23,6 +23,6 @@ our $PROXY_SINGLE_THUMB = 'single_thumb';
 our $PROXY_UNMARK_DOWNLOAD = 'unmark_as_download';
 our $PROXY_UNMARK_PICTURE = 'unmark_as_pic';
 our $PROXY_UNMARK_THUMB = 'unmark_as_thumb';
-our $VERSION = "0.0.4";
+our $VERSION = "0.0.5-dev";
 
 1;
