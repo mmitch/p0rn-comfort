@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-# $Id: p0rn-proxy,v 1.7 2004-05-09 10:34:55 mitch Exp $
+# $Id: p0rn-proxy,v 1.8 2004-05-09 11:32:08 mitch Exp $
 
-# p0rn-proxy -- a proxy for comfortably browsing pr0n
+# p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
 # 2004 (C) by Christian Garbs <mitch@cgarbs.de>
 #
@@ -25,8 +25,12 @@ use P0rn::DB;
 ######[ Global Variables ]
 #
 
+my $CVSVERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $VERSION = "0.0.1";
+my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
 my ($ua, $thumbs, $pics, $downs);
-my $signature = 'http://www.cgarbs.de/PROXYCONTROL';
+
+my @downs = ( 'queued', 'running', 'finished' );
 
 ######[ Subroutines ]
 #
@@ -47,7 +51,7 @@ sub execute_proxy_command($)
     my $uri = $request->uri();
     my $content = '<html><head><title>p0rn proxy response</title></head><body>';
 
-    if ( $uri =~ m,$signature/([^/]+)/(.*)$, ) {
+    if ( $uri =~ m,$URLBASE/([^/]+)/(.*)$, ) {
 	my $cmd = $1;
 	my $uri = $2;
 	my $urishort = shorten_uri($uri);
@@ -82,13 +86,59 @@ sub execute_proxy_command($)
 	    $pics->{$urishort} = 0;
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page.<br>";
 	    if (exists $downs->{$urishort}) {
-		$content .= "It already exists in download list (status=$downs->{$urishort}).";
+		$content .= "It already exists in download list (status=$downs[$downs->{$urishort}]).";
 	    } else {
 		$downs->{$urishort} = 0;
 		$content .= "It has been queued for download.";
 	    }
 	    $response->header(refresh => '5; url=javascript:window.close()');
+
+	} elsif ($cmd eq 'admin') {
+
+	    $content .= '<h1>p0rn-proxy main menu</h1><ul><ul><ul>' .
+		"<li><a href=\"$URLBASE/list_thumbs/_nouri_\">list thumbnail pages</a></li>" .
+		"<li><a href=\"$URLBASE/list_pics/_nouri_\">list picture pages</a></li>" .
+		"<li><a href=\"$URLBASE/list_downs/_nouri_\">list download pages</a></li>" .
+		"</ul></ul><hr>p0rn-proxy $VERSION/$CVSVERSION</ul>";
 	    
+	} elsif ($cmd eq 'list_thumbs') {
+
+	    $content .= '<h1>thumbnail pages</h1>';
+
+	    foreach my $u (sort keys %{$thumbs}) {
+		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+	    }
+
+	} elsif ($cmd eq 'list_pics') {
+
+	    $content .= '<h1>picture pages</h1>';
+
+	    foreach my $u (sort keys %{$pics}) {
+		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+	    }
+
+	} elsif ($cmd eq 'list_downs') {
+
+	    $content .= '<h1>download pages</h1>';
+
+	    $content .= '<h2>queued</h2>';
+	    foreach my $u (sort keys %{$downs}) {
+		next unless $downs->{$u} == 0;
+		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+	    }
+
+	    $content .= '<h2>running</h2>';
+	    foreach my $u (sort keys %{$downs}) {
+		next unless $downs->{$u} == 1;
+		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+	    }
+
+	    $content .= '<h2>finished</h2>';
+	    foreach my $u (sort keys %{$downs}) {
+		next unless $downs->{$u} == 2;
+		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+	    }
+
 	} else {
 	    $content .= "unknown command <tt>$cmd</tt>: <tt>".$request->uri().'</tt>';
 	}
@@ -108,7 +158,7 @@ sub print_usage()
 {
     print << "EOF";
 
-Usage: pr0nxy [options]
+Usage: p0rn-proxy [options]
 Supported options (long and short forms):
   -a, --addr          : set address to listen on
   -c, --configfile    : set configuration file
@@ -121,19 +171,9 @@ EOF
     exit 0;
 }
 
-sub send_proxyauth() 
-# a 407 response which tells the client that authentication is needed
-{
-    my $header = HTTP::Headers->new(proxy_authenticate => 'Basic realm="pr0nxy"');
-    my $response = HTTP::Response->new("407", "Proxy Authentication Required", $header);
-    return $response;
-}    
-
 ######[ Main program ]
 #
    
-my $CVSVERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-my $VERSION = "0.0.1";
 print "this is p0rn-proxy ${VERSION}/${CVSVERSION}\n";
 
 # define configuration options
@@ -182,7 +222,7 @@ die "@_" unless defined $proxy;
 
 # create UserAgent
 $ua = LWP::UserAgent->new;
-$ua->agent("pr0nxy ${VERSION}/${CVSVERSION}");
+$ua->agent("p0rn-proxy ${VERSION}/${CVSVERSION}");
 
 if ( defined $config->proxy()
      and $config->proxy() ne ""
@@ -218,7 +258,7 @@ while (my $conn = $proxy->accept) {
 
 	    my $uri = $request->uri();
 
-	    if ($uri =~ m,^$signature/,) {
+	    if ($uri =~ m,^$URLBASE/,) {
 
 		$response = execute_proxy_command($request);
 		$status = "CT";
@@ -234,8 +274,8 @@ while (my $conn = $proxy->accept) {
 		    my $content = << "EOF";
 <html><head><title>thumbnail page</title></head><body>
 <a href="$uri">$urishort</a> is considered a thumbnail page and thus not displayed.<br>
-[ <a href="$signature/single_thumb/$uri">access once</a>
-| <a href="$signature/unmark_as_thumb/$uri">access always</a>
+[ <a href="$URLBASE/single_thumb/$uri">access once</a>
+| <a href="$URLBASE/unmark_as_thumb/$uri">access always</a>
 ]</body></html>
 EOF
 ;
@@ -252,8 +292,8 @@ EOF
 			my $content = << "EOF";
 <html><head><title>already seen</title></head><body>
 <a href="$uri">$urishort</a> is considered an already seen picture page and thus not displayed.<br>
-[ <a href="$signature/single_pic/$uri">access once</a>
-| <a href="$signature/unmark_as_pic/$uri">access always</a>
+[ <a href="$URLBASE/single_pic/$uri">access once</a>
+| <a href="$URLBASE/unmark_as_pic/$uri">access always</a>
 ]</body></html>
 EOF
 ;
@@ -281,10 +321,10 @@ EOF
 			    my $content = $response->content();
 			    
 			    my $linkline = '<p align="center">' .
-				'[ th: <a target="_top" href="'."$signature/mark_as_thumb/$uri".'">mark as thumbnail page</a> ' .
-				'| ad: <a target="_top" href="'."$signature/admin/_nouri_".'">proxy admin</a> ' .
-				'| pi: <a target="_top" href="'."$signature/mark_as_pic/$uri".'">mark as picture page</a> ' .
-				'| do: <a target="_top" href="'."$signature/mark_as_download/$uri".'">mark as picture page and download</a> ' .
+				'[ th: <a target="_top" href="'."$URLBASE/mark_as_thumb/$uri".'">mark as thumbnail page</a> ' .
+				'| ad: <a target="_top" href="'."$URLBASE/admin/_nouri_".'">proxy admin</a> ' .
+				'| pi: <a target="_top" href="'."$URLBASE/mark_as_pic/$uri".'">mark as picture page</a> ' .
+				'| do: <a target="_top" href="'."$URLBASE/mark_as_download/$uri".'">mark as picture page and download</a> ' .
 				']<br><br><p>';
 			    
 			    $content =~ s/<body([^>]*)>/<body$1>$linkline/i;
