@@ -1,54 +1,41 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.1 2004-11-14 18:40:11 mitch Exp $
+# $Id: p0rn-bot,v 1.2 2004-11-14 18:48:39 mitch Exp $
 use strict;
 
 use LWP::UserAgent;
 use HTML::Parser;
 
-my $in_link = 0;
 my $base;
 my $ua = LWP::UserAgent->new;
 $ua->timeout(10);
 $ua->env_proxy;
 my $parser = HTML::Parser->new(api_version => 3);
 $parser->handler( start => \&start_handler, "tagname,attr");
-$parser->handler( end   => \&end_handler,   "tagname");
 
 sub debug
 {
     warn "@_\n";
 }
 
-sub check_image($$$)
-{
-    my ($img, $link, $base) = (@_);
-    debug "---------";
-    debug "image: $img";
-    debug "link:  $link";
-    if ($link) {
-	debug "linked picture.";
-    } else {
-	debug "DOWNLOADABLE PICTURE: $base.$img";
-    }
-}
-
 sub start_handler
 {
-    my ($tag, $attr) = (@_);
-    if ($tag eq "img") {
-	check_image($attr->{src}, $in_link, $base);
-    } elsif ($tag eq "a") {
-	$in_link = $attr->{href};
-	debug $in_link;
-    }
+    return unless shift eq "a";
+    my $attr = shift;
+    my $link = $attr->{href};
+
+    return if ($link =~ /^javascript:/);
+    $link = $base . $link unless $link =~ m,^http://,;
+
+    debug $link;
 }
 
-sub end_handler
+sub parse_page($)
 {
-    return if shift ne "a";
-    $in_link = 0;
-}
+    my $response = shift;
 
+    $base = $response->base;
+    $parser->parse($response->content);
+}
 
 sub check_url
 {
@@ -58,12 +45,11 @@ sub check_url
     $recurse = 0 unless defined $recurse;
 
     debug "GET $url";
-    $base=$url;
-    my $response = $ua->request(HTTP::Request->new(GET => $url),
-				sub {$parser->parse($_[0])});
-    
+    my $response = $ua->get($url);
+
     if ($response->is_success) {
 	debug "GET ok";
+	parse_page $response;
 	
     }
 }
