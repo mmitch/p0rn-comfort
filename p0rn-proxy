@@ -1,0 +1,313 @@
+#!/usr/bin/perl
+
+# $Id: p0rn-proxy,v 1.1 2004-05-09 08:13:13 mitch Exp $
+
+# pr0nxy -- a proxy for comfortably browsing pr0n
+#
+# 2004 (C) by Christian Garbs <mitch@cgarbs.de>
+#
+# Licensed under GNU GPL. See COPYING for details.
+
+use strict;
+use warnings;
+use AppConfig qw(:expand);
+use BerkeleyDB::Hash;
+use HTTP::Daemon;
+use HTTP::Response;
+use HTTP::Status;
+use LWP::UserAgent;
+use Pr0nxy::DB;
+
+# TODO:
+# - gezippte Übertragung wieder einbauen
+#
+
+######[ Global Variables ]
+#
+
+my ($ua, $thumbs, $pics, $downs);
+my $signature = 'http://www.cgarbs.de/PROXYCONTROL';
+
+######[ Subroutines ]
+#
+
+sub shorten_uri($)
+# shorten an URI (cut off CGI parameters)
+{
+    my $uri = shift;
+    $uri =~ s/\?.*$//;
+    return $uri;
+}
+
+sub execute_proxy_command($)
+# execute user commands
+{
+    my $request = shift;
+    my $uri = $request->uri();
+    my $content = '<html><head><title>p0rn proxy response</title></head><body>';
+
+    if ( $uri =~ m,$signature/([^/]+)/(.*)$, ) {
+	my $cmd = $1;
+	my $uri = $2;
+	my $urishort = shorten_uri($uri);
+	
+	if ($cmd eq 'mark_as_thumb' ) {
+	    $thumbs->{$urishort} = 0;
+	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a thumbnail page.";
+	    
+	} elsif ($cmd eq 'single_thumb' ) {
+	    $thumbs->{$urishort} = 1;
+	    $content .= "<a href=\"$uri\">$urishort</a> (thumbnail) can now be accessed once.";
+	    
+	} elsif ($cmd eq 'unmark_as_thumb' ) {
+	    delete $thumbs->{$urishort};
+	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the thumbnail list.";
+	    
+	} elsif ($cmd eq 'mark_as_pic' ) {
+	    $pics->{$urishort} = 0;
+	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page.";
+	    
+	} elsif ($cmd eq 'single_pic' ) {
+	    $pics->{$urishort} = 1;
+	    $content .= "<a href=\"$uri\">$urishort</a> (picture) can now be accessed once.";
+	    
+	} elsif ($cmd eq 'unmark_as_pic' ) {
+	    delete $pics->{$urishort};
+	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the picture list.";
+	    
+	} elsif ($cmd eq 'mark_as_download' ) {
+	    $pics->{$urishort} = 0;
+	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page.<br>";
+	    if (exists $downs->{$urishort}) {
+		$content .= "It already exists in download list (status=$downs->{$urishort}).";
+	    } else {
+		$downs->{$urishort} = 0;
+		$content .= "It has been queued for download.";
+	    }
+	    
+	} else {
+	    $content .= "unknown command <tt>$cmd</tt>: <tt>$uri</tt>";
+	}
+
+    } else {
+	$content .= "parse error: <tt>$uri</tt>";
+    }
+
+    $content .= '</body></html>';
+    my $response = HTTP::Response->new( RC_OK, 'p0rn proxy response' );
+    $response->content($content);
+
+    return $response;
+}
+
+sub print_usage()
+# prints a short help text and exits
+{
+    print << "EOF";
+
+Usage: pr0nxy [options]
+Supported options (long and short forms):
+  -a, --addr          : set address to listen on
+  -c, --configfile    : set configuration file
+  -h, --help          : print usage and exit
+  -p, --port          : set port to listen on
+  -P, --proxy         : set proxy to use
+  -v, --version       : print version number and exit
+EOF
+;
+    exit 0;
+}
+
+sub send_proxyauth() 
+# a 407 response which tells the client that authentication is needed
+{
+    my $header = HTTP::Headers->new(proxy_authenticate => 'Basic realm="pr0nxy"');
+    my $response = HTTP::Response->new("407", "Proxy Authentication Required", $header);
+    return $response;
+}    
+
+######[ Main program ]
+#
+   
+my $CVSVERSION = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $VERSION = "2.0.5";
+print "this is pr0nxy ${VERSION}/${CVSVERSION}\n";
+
+# define configuration options
+my $config = AppConfig->new( { CASE => 1 } );
+$config->define( 'configfile|c=s',    { DEFAULT => '' } );
+$config->define( 'addr|a=s',          { DEFAULT => '127.0.0.1' } );
+$config->define( 'port|p=s',          { DEFAULT => '8080' } );
+$config->define( 'proxy|P=s',         { DEFAULT => $ENV{'http_proxy'}, EXPAND => EXPAND_ENV } );
+$config->define( 'version|V!' );
+$config->define( 'help|h!' );
+
+# Another config file might be given on command line, so process a copy of ARGV
+$config->getopt( qw(no_ignore_case), [ @ARGV ]);
+
+# if we are to just print the version number, then quit now
+exit if $config->version();
+
+# if we are to just print help, then do it now
+print_usage() if $config->help();
+
+# read config file, if existent and desired
+if ($config->configfile() ne "") {
+    if (-r $config->configfile()) {
+	print "- reading options from `".$config->configfile()."'\n";
+	$config->file($config->configfile());
+    } else {
+	warn "can't read configuration file `".$config->configfile()."': $!\nusing built-in defaults\n";
+    }
+}
+
+# override config file with command line arguments
+$config->getopt( qw(no_ignore_case), [ @ARGV ] );
+
+# if we are to just print the version number, then quit now
+exit if $config->version();
+
+# if we are to just print help, then do it now
+print_usage() if $config->help();
+
+# create proxy
+my $proxy = HTTP::Daemon->new(
+			      LocalAddr=>$config->addr(),
+			      LocalPort=>$config->port()
+			      );
+die "@_" unless defined $proxy;
+
+# create UserAgent
+$ua = LWP::UserAgent->new;
+$ua->agent("pr0nxy ${VERSION}/${CVSVERSION}");
+
+if ( defined $config->proxy()
+     and $config->proxy() ne ""
+     and $config->proxy() ne "none" ) {
+    print "- using existing proxy on ".$config->proxy()."\n";
+    $ua->proxy('http', $config->proxy());
+}
+
+# open dbs
+$thumbs = opendb('thumbz');
+print "- thumbpages db loaded\n";
+$pics = opendb('picz');
+print "- picpages db loaded\n";
+$downs = opendb('downz');
+print "- download db loaded\n";
+
+print "- proxy started on ".$config->addr().":".$config->port()."\n";
+
+# Don't accumulate zombies
+# (we don't care about our children
+#  -> possible SIGPIPES when browser aborts request)
+$SIG{CHLD} = 'IGNORE';
+
+while (my $conn = $proxy->accept) {
+    if (! fork()) {
+	# CHILD
+	while (my $request = $conn->get_request) {
+	    my $response;
+	    my $status = '..';
+
+	    # keine gezippten Daten, wir wollen im HTML rumwurschteln!
+	    $request->header('Accept-Encoding' => 'identity');
+
+	    my $uri = $request->uri();
+
+	    if ($uri =~ m,^$signature/,) {
+
+		$response = execute_proxy_command($request);
+		$status = "CT";
+
+	    } else {
+		
+		my $urishort = shorten_uri($uri);
+		
+		# check for thumbsites
+		if (exists $thumbs->{$urishort} and ! $thumbs->{$urishort} ) {
+		    
+		    # return error page
+		    my $content = << "EOF";
+<html><head><title>thumbnail page</title></head><body>
+<a href="$uri">$urishort</a> is considered a thumbnail page and thus not displayed.<br>
+[ <a href="$signature/single_thumb/$uri">access once</a>
+| <a href="$signature/unmark_as_thumb/$uri">access always</a>
+]</body></html>
+EOF
+;
+		    $response = HTTP::Response->new( RC_OK, 'thumbnail page!' );
+		    $response->content( $content );
+		    $status = "TH";
+		    
+		} else {
+		    
+		    # check for picsites
+		    if (exists $pics->{$urishort} and ! $pics->{$urishort} ) {
+			
+			# return error page
+			my $content = << "EOF";
+<html><head><title>already seen</title></head><body>
+<a href="$uri">$urishort</a> is considered an already seen picture page and thus not displayed.<br>
+[ <a href="$signature/single_pic/$uri">access once</a>
+| <a href="$signature/unmark_as_pic/$uri">access always</a>
+]</body></html>
+EOF
+;
+			$response = HTTP::Response->new( RC_OK, 'already seen picture page!' );
+			$response->content( $content );
+			$status = "PI";
+			
+		    } else {
+			
+			if (exists $thumbs->{$uri}) {
+			    $thumbs->{$uri}--;
+			}
+			
+			if (exists $pics->{$uri}) {
+			    $pics->{$uri}--;
+			}
+			
+			# do the HTTP request
+			$response = $ua->simple_request($request);
+			
+			$status = "ok";
+			
+			# mangle HTML pages
+			if ( lc substr ($response->content_type(), 0, 9) eq "text/html" ) {
+			    my $content = $response->content();
+			    
+			    my $linkline = '<p align="center">' .
+				'[ <a href="'."$signature/mark_as_thumb/$uri".'">mark as thumbnail page</a>' .
+				'| <a href="'."$signature/mark_as_pic/$uri".'">mark as picture page</a>' .
+				'| <a href="'."$signature/mark_as_download/$uri".'">mark as picture page and download</a>' .
+				']<br><br><p>';
+			    
+			    $content =~ s/<body([^>]*)>/<body$1>$linkline/i;
+			    
+			    $response->content($content);
+			    $status = "OK";
+			}
+			
+		    }
+		    
+		}
+
+	    }
+	    
+	    # print log message
+	    # TODO: more flexible logging, activate debug via configuration variable
+	    printf 
+#		"%s%s%s  %s\n" ,
+		"%s  %s\n" ,
+#		$gzip_requested    ? 'g' : ' ' ,
+#		$currently_gzipped ? 'g' : ' ' ,
+		$status,
+		$uri ;
+
+	    $conn->send_response($response);
+	    exit;
+	}
+    }
+    $conn->close;
+}
