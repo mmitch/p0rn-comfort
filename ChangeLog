@@ -1,10 +1,11 @@
-++ $Id: ChangeLog,v 1.1 2004-05-15 08:05:19 mitch Exp $ ++
+++ $Id: ChangeLog,v 1.2 2004-05-16 19:36:08 mitch Exp $ ++
   
 ++ p0rn comfort changelog ++
 
 ????/??/?? p0rn-comfort 0.0.3
 
 	* add changelog
+	* add links to homepage
 	
 2004/05/15 p0rn-comfort 0.0.2
 
