@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dbdel,v 1.4 2004-05-14 20:54:19 mitch Exp $
+# $Id: p0rn-dbdel,v 1.5 2004-05-16 19:35:21 mitch Exp $
 #
 # remove links from p0rn.db
 #
@@ -51,7 +51,7 @@ L<p0rn-proxy(1)>, L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
 
  use BerkeleyDB::Hash;
 
-This module can be obtained at <F<http://www.cpan.org>>.
+This module can be obtained from L<http://www.cpan.org>.
 
 =head1 BUGS
 
@@ -60,6 +60,10 @@ Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
 =head1 AUTHOR
 
 p0rn-dbdel was written by Christian Garbs <F<mitch@cgarbs.de>>.
+
+=head1 AVAILABILITY
+
+Look for updates at L<http://www.cgarbs.de/p0rn-comfort.en.html>.
 
 =head1 COPYRIGHT
 
