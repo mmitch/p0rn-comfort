@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.24 2004-11-20 19:55:24 mitch Exp $
+# $Id: p0rn-proxy,v 1.25 2004-11-20 20:39:55 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -169,7 +169,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $URLBASE = $Static::PROXY_CTRL_BASE;
 my ($ua, $thumbs, $pics, $downs);
 
@@ -200,35 +200,35 @@ sub execute_proxy_command($)
 	my $uri = $2;
 	my $urishort = shorten_uri($uri);
 	
-	if ($cmd eq 'mark_as_thumb' ) {
+	if ($cmd eq ${Static::PROXY_MARK_THUMB} ) {
 	    $thumbs->{$urishort} = 0;
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a thumbnail page.";
 	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
-	} elsif ($cmd eq 'single_thumb' ) {
+	} elsif ($cmd eq ${Static::PROXY_SINGLE_THUMB} ) {
 	    $thumbs->{$urishort} = 1;
 	    $content .= "<a href=\"$uri\">$urishort</a> (thumbnail) can now be accessed once.";
 	    $response->header(refresh => "1; $uri");
 	    
-	} elsif ($cmd eq 'unmark_as_thumb' ) {
+	} elsif ($cmd eq ${Static::PROXY_UNMARK_THUMB} ) {
 	    delete $thumbs->{$urishort};
 	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the thumbnail list.";
 	    
-	} elsif ($cmd eq 'mark_as_pic' ) {
+	} elsif ($cmd eq ${Static::PROXY_MARK_PICTURE} ) {
 	    $pics->{$urishort} = 0;
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page.";
 	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
-	} elsif ($cmd eq 'single_pic' ) {
+	} elsif ($cmd eq ${Static::PROXY_SINGLE_PICTURE} ) {
 	    $pics->{$urishort} = 1;
 	    $content .= "<a href=\"$uri\">$urishort</a> (picture) can now be accessed once.";
 	    $response->header(refresh => "1; $uri");
 	    
-	} elsif ($cmd eq 'unmark_as_pic' ) {
+	} elsif ($cmd eq ${Static::PROXY_UNMARK_PICTURE} ) {
 	    delete $pics->{$urishort};
 	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the picture list.";
 	    
-	} elsif ($cmd eq 'mark_as_download' ) {
+	} elsif ($cmd eq ${Static::PROXY_MARK_DOWNLOAD} ) {
 	    $pics->{$urishort} = 0;
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page.<br>";
 	    if (exists $downs->{$urishort}) {
@@ -239,56 +239,60 @@ sub execute_proxy_command($)
 	    }
 	    $response->header(refresh => '5; url=javascript:window.close()');
 
-	} elsif ($cmd eq 'unmark_as_download' ) {
+	} elsif ($cmd eq ${Static::PROXY_UNMARK_DOWNLOAD} ) {
 	    delete $downs->{$urishort};
 	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the download list";
 
-	} elsif ($cmd eq 'admin') {
+	} elsif ($cmd eq ${Static::PROXY_MARK_DOWNLOAD} ) {
 
 	    $content .= '<h1>p0rn-proxy main menu</h1><ul><ul><ul>' .
-		"<li><a href=\"$URLBASE/list_thumbs/_nouri_\">list thumbnail pages</a></li>" .
-		"<li><a href=\"$URLBASE/list_pics/_nouri_\">list picture pages</a></li>" .
-		"<li><a href=\"$URLBASE/list_downs/_nouri_\">list download pages</a></li>" .
+		"<li><a href=\"$URLBASE/${Static::PROXY_LIST_THUMB}/_nouri_\">list thumbnail pages</a></li>" .
+		"<li><a href=\"$URLBASE/${Static::PROXY_LIST_PICTURE}/_nouri_\">list picture pages</a></li>" .
+		"<li><a href=\"$URLBASE/${Static::PROXY_LIST_DOWNLOAD}/_nouri_\">list download pages</a></li>" .
 		"</ul></ul><hr>p0rn-proxy ${Static::VERSION}/$CVSVERSION</ul>";
 	    
-	} elsif ($cmd eq 'list_thumbs') {
+	} elsif ($cmd eq ${Static::PROXY_LIST_THUMB} ) {
 
 	    $content .= '<h1>thumbnail pages</h1>';
 
 	    foreach my $u (sort keys %{$thumbs}) {
-		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_THUMB}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
-	} elsif ($cmd eq 'list_pics') {
+	} elsif ($cmd eq ${Static::PROXY_LIST_PICTURE} ) {
 
 	    $content .= '<h1>picture pages</h1>';
 
 	    foreach my $u (sort keys %{$pics}) {
-		$content .= "[<a href=\"$URLBASE/unmark_as_pic/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_PICTURE}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
-	} elsif ($cmd eq 'list_downs') {
+	} elsif ($cmd eq ${Static::PROXY_LIST_DOWNLOAD} ) {
 
 	    $content .= '<h1>download pages</h1>';
 
 	    $content .= '<h2>queued</h2>';
 	    foreach my $u (sort keys %{$downs}) {
 		next unless $downs->{$u} == 0;
-		$content .= "[<a href=\"$URLBASE/unmark_as_download/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_DOWNLOAD}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
 	    $content .= '<h2>running</h2>';
 	    foreach my $u (sort keys %{$downs}) {
 		next unless $downs->{$u} == 1;
-		$content .= "[<a href=\"$URLBASE/unmark_as_download/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_DOWNLOAD}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
 	    $content .= '<h2>finished</h2>';
 	    foreach my $u (sort keys %{$downs}) {
 		next unless $downs->{$u} == 2;
-		$content .= "[<a href=\"$URLBASE/unmark_as_download/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_DOWNLOAD}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
+	} elsif ($cmd eq ${Static::PROXY_GET_VERSION} ) {
+
+	    $content .= "\nVERSION: ${Static::VERSION}/$CVSVERSION\n";
+	    
 	} else {
 	    $content .= "unknown command <tt>$cmd</tt>: <tt>".$request->uri().'</tt>';
 	}
@@ -331,8 +335,8 @@ sub handle_request($)
 	    my $content = << "EOF";
 <html><head><title>thumbnail page</title></head><body>
 <a href="$uri">$urishort</a> is considered a thumbnail page and thus not displayed.<br>[
-<a href="$URLBASE/single_thumb/$uri">access once</a>
-| <a href="$URLBASE/unmark_as_thumb/$uri">access always</a>
+<a href="$URLBASE/${Static::PROXY_SINGLE_THUMB}/$uri">access once</a>
+| <a href="$URLBASE/${Static::PROXY_UNMARK_THUMB}/$uri">access always</a>
 ]</body></html>
 EOF
 ;
@@ -349,8 +353,8 @@ EOF
 		my $content = << "EOF";
 <html><head><title>already seen</title></head><body>
 <a href="$uri">$urishort</a> is considered an already seen picture page and thus not displayed.<br>[
-<a href="$URLBASE/single_pic/$uri">access once</a>
-| <a href="$URLBASE/unmark_as_pic/$uri">access always</a>
+<a href="$URLBASE/${Static::PROXY_SINGLE_PICTURE}/$uri">access once</a>
+| <a href="$URLBASE/${Static::PROXY_UNMARK_PICTURE}/$uri">access always</a>
 ]</body></html>
 EOF
 ;
@@ -378,10 +382,10 @@ EOF
 		    my $content = $response->content();
 		    
 		    my $linkline = '<p align="center">' .
-			'[ th: <a target="_top" href="'."$URLBASE/mark_as_thumb/$uri".'">mark as thumbnail page</a> ' .
-			'| ad: <a target="_top" href="'."$URLBASE/admin/_nouri_".'">proxy admin</a> ' .
-			'| pi: <a target="_top" href="'."$URLBASE/mark_as_pic/$uri".'">mark as picture page</a> ' .
-			'| do: <a target="_top" href="'."$URLBASE/mark_as_download/$uri".'">mark as picture page and download</a> ' .
+			'[ th: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_THUMB}/$uri".'">mark as thumbnail page</a> ' .
+			'| ad: <a target="_top" href="'."$URLBASE/${Static::PROXY_ADMIN}/_nouri_".'">proxy admin</a> ' .
+			'| pi: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_PICTURE}/$uri".'">mark as picture page</a> ' .
+			'| do: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_DOWNLOAD}/$uri".'">mark as picture page and download</a> ' .
 			']<br><br><p>';
 		    
 		    $content =~ s/<body([^>]*)>/<body$1>$linkline/i;
