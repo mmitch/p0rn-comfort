@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.25 2004-11-20 20:39:55 mitch Exp $
+# $Id: p0rn-proxy,v 1.26 2004-11-20 20:56:56 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -25,6 +25,7 @@ B<p0rn-proxy>
 
 S<[ B<--addr> I<addr> ]>
 S<[ B<--configfile> I<configfile> ]>
+S<[ B<--help> ]>
 S<[ B<--port> I<port> ]>
 S<[ B<--proxy> I<proxy> ]>
 S<[ B<--version> ]>
@@ -32,6 +33,7 @@ S<[ B<--version> ]>
 B<p0rn-proxy>
 S<[ B<-a> I<addr> ]>
 S<[ B<-c> I<configfile> ]>
+S<[ B<-h> ]>
 S<[ B<-p> I<port> ]>
 S<[ B<-P> I<proxy> ]>
 S<[ B<-V> ]>
@@ -66,7 +68,8 @@ make use of the proxy.
 
 Be careful: Everybody who can reach the port on this address can use
 your proxy.  You should bind to an address only reachable from your
-local net or use a packet filter to 'guard' japana from the outside.
+local net or use a packet filter to 'guard' p0rn-proxy from the
+outside.
 
 The address '0.0.0.0' will bind p0rn-proxy to all of your network
 devices.
@@ -81,6 +84,10 @@ The options from the given configuration file will be read.  These
 options can be overridden by other command line arguments.
 
 Default is not to read a configuration file.
+
+=item B<--help> | B<-h>
+
+This prints a short help text and exits.
 
 =item B<--port> I<port> | B<-p> I<port>
 
@@ -105,7 +112,7 @@ Default is to use the environment variable ${http_proxy}.
 
 =item B<--version> | B<-V>
 
-This prints the current version of japana and exits.
+This prints the current version of p0rn-proxy and exits.
 
 =back
 
@@ -146,8 +153,8 @@ These modules can be obtained from L<http://www.cpan.org>.
 
 In the default configuration, p0rn-proxy supports B<NO ACCESS
 CONTROL!> Everyone with access to the proxy port on your system will
-be able to use the proxy.  Please bind japana to a port that is either
-only available from your local network or protected by a packet
+be able to use the proxy.  Please bind p0rn-proxy to a port that is
+either only available from your local network or protected by a packet
 filter.
 
 Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
@@ -169,7 +176,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $URLBASE = $Static::PROXY_CTRL_BASE;
 my ($ua, $thumbs, $pics, $downs);
 
