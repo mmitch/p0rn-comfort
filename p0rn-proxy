@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: p0rn-proxy,v 1.11 2004-05-14 18:54:17 mitch Exp $
+# $Id: p0rn-proxy,v 1.12 2004-05-14 18:57:10 mitch Exp $
 
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -123,9 +123,18 @@ Instead of B<--port 3128> you would put this line in the configuration file
 
 and so on and so forth.
 
+=head1 FILES
+
+All data is stored in a database.  By default, it is located in
+B<./p0rn.db> (yes, that's the directory from which you're starting
+p0rn-proxy).  Is you want to change this, set the environment variable
+B<P0RNDBLOCATION> (the second letter is a zero) to another path and
+filename.
+
 =head1 MODULES NEEDED
 
  use AppConfig;
+ use BerkeleyDB::Hash;
  use HTTP::Daemon;
  use LWP::UserAgent;
 
@@ -154,7 +163,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.2";
 my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
 my ($ua, $thumbs, $pics, $downs);
