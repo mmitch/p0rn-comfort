@@ -1,0 +1,37 @@
+#!/usr/bin/perl -w
+# $Id: p0rn-dbrestore,v 1.1 2004-05-14 16:51:03 mitch Exp $
+#
+# restores the complete p0rn.db
+#
+use strict;
+my @tables = qw(thumbz picz downz);
+my $db_open = 0;
+
+while (my $line =<>) {
+    chomp $line;
+
+    # new table?
+    if ($line =~ /^\?([a-z]+)\&$/) {
+
+	my $table = $1;
+	if ($db_open) {
+	    close LOAD or die "can't close pipe: $!\n";
+	}
+
+	print "clearing table $table\n";
+	system("p0rn-dblist $table | p0rn-dbdel $table");
+
+	print "loading table $table\n";
+	open LOAD, "| p0rn-dbadd $table" or die "can't open pipe: $!\n";
+	$db_open = 1;
+
+    } else {
+	print LOAD "$line\n" if $db_open;
+    }
+}
+
+if ($db_open) {
+    close LOAD or die "can't close pipe: $!\n";
+}
+
+print "finished\n";
