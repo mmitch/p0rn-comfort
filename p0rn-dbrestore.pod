@@ -1,0 +1,50 @@
+# $Id: p0rn-dbrestore.pod,v 1.1 2004-05-14 20:40:02 mitch Exp $
+# p0rn-dbrestore manpage
+# (C) by Christian Garbs <mitch@cgarbs.de>
+# Licensed under GNU GPL
+
+=head1 NAME
+
+p0rn-dbrestore - restore the p0rn database
+
+=head1 SYNOPSIS
+
+B<p0rn-dbrestore>
+
+=head1 OVERVIEW
+
+p0rn-dbrestore reads a database backup from STDIN and writes it into
+the p0rn database.
+
+=head1 FILES
+
+All data is stored in a database.  By default, it is located in
+B<./p0rn.db> (yes, that's the directory from which you're starting
+p0rn-dbrestore).  Is you want to change this, set the environment
+variable B<P0RNDBLOCATION> (the second letter is a zero) to another
+path and filename.
+
+=head1 SEE ALSO
+
+L<p0rn-proxy(1)>, L<p0rn-download(1)>, L<p0rn-dbdump(1)>
+
+=head1 MODULES NEEDED
+
+ use BerkeleyDB::Hash;
+
+This module can be obtained at <F<http://www.cpan.org>>.
+
+=head1 BUGS
+
+Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
+
+=head1 AUTHOR
+
+p0rn-dbrestore was written by Christian Garbs <F<mitch@cgarbs.de>>.
+
+=head1 COPYRIGHT
+
+p0rn-dbrestore is licensed under the GNU GPL.
+
+=cut
+
