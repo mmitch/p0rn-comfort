@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.6 2004-05-14 20:53:16 mitch Exp $
+# $Id: p0rn-download,v 1.7 2004-05-16 19:33:53 mitch Exp $
 #
 # download selected p0rn
 #
@@ -63,6 +63,10 @@ Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
 
 p0rn-download was written by Christian Garbs <F<mitch@cgarbs.de>>.
 
+=head1 AVAILABILITY
+
+Look for updates at L<http://www.cgarbs.de/p0rn-comfort.en.html>.
+
 =head1 COPYRIGHT
 
 p0rn-download is licensed under the GNU GPL.
@@ -113,4 +117,5 @@ while ($done_something) {
 
 untie %{$hash};
 
+wait;
 warn "\n[[ FINISHED. ]]\n\n";
