@@ -1,4 +1,4 @@
-# $Id: p0rn-grab.pod,v 1.4 2004-05-16 19:32:59 mitch Exp $
+# $Id: p0rn-grab.pod,v 1.5 2004-05-26 08:58:16 mitch Exp $
 #
 # p0rn-grab manpage
 #
@@ -49,7 +49,7 @@ Look for updates at L<http://www.cgarbs.de/p0rn-comfort.en.html>.
 
 =head1 COPYRIGHT
 
-p0rn-dbrestore is licensed under the GNU GPL.
+p0rn-grab is licensed under the GNU GPL.
 
 =cut
 
