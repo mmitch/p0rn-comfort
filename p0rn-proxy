@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: p0rn-proxy,v 1.4 2004-05-09 10:07:01 mitch Exp $
+# $Id: p0rn-proxy,v 1.5 2004-05-09 10:08:31 mitch Exp $
 
 # p0rn-proxy -- a proxy for comfortably browsing pr0n
 #
@@ -132,7 +132,7 @@ sub send_proxyauth()
 ######[ Main program ]
 #
    
-my $CVSVERSION = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.1";
 print "this is p0rn-proxy ${VERSION}/${CVSVERSION}\n";
 
@@ -281,8 +281,8 @@ EOF
 			    my $content = $response->content();
 			    
 			    my $linkline = '<p align="center">' .
-				'[ ad: <a target="_top" href="'."$signature/admin/_nouri_".'">proxy admin</a> ' .
-				'| th: <a target="_top" href="'."$signature/mark_as_thumb/$uri".'">mark as thumbnail page</a> ' .
+				'[ th: <a target="_top" href="'."$signature/mark_as_thumb/$uri".'">mark as thumbnail page</a> ' .
+				'| ad: <a target="_top" href="'."$signature/admin/_nouri_".'">proxy admin</a> ' .
 				'| pi: <a target="_top" href="'."$signature/mark_as_pic/$uri".'">mark as picture page</a> ' .
 				'| do: <a target="_top" href="'."$signature/mark_as_download/$uri".'">mark as picture page and download</a> ' .
 				']<br><br><p>';
