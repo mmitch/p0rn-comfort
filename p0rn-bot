@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.9 2004-11-20 13:55:27 mitch Exp $
+# $Id: p0rn-bot,v 1.10 2004-11-20 20:39:41 mitch Exp $
 #
 # download selected p0rn
 #
@@ -7,30 +7,201 @@
 # Licensed under GNU GPL.  See COPYING for details.
 
 use strict;
-use LWP::UserAgent;
+use AppConfig qw(:expand);
 use HTML::Parser;
+use LWP::UserAgent;
+use P0rn::Static;
 use URI;
 
-my $is_thumb = 'http://www.cgarbs.de/PROXYCONTROL/mark_as_thumb/';
-my $is_pic = 'http://www.cgarbs.de/PROXYCONTROL/mark_as_download/';
+=head1 NAME
 
-my $status;
-my $base;
-my $ua = LWP::UserAgent->new;
-$ua->timeout(10);
-$ua->proxy(['http'], 'http://localhost:12345/');
-my $parser = HTML::Parser->new(api_version => 3);
-$parser->handler( start => \&start_handler, "tagname,attr");
+p0rn-proxy - HTTP proxy for comfortably browsing p0rn
+
+=head1 SYNOPSIS
+
+B<p0rn-proxy>
+
+S<[ B<--addr> I<addr> ]>
+S<[ B<--configfile> I<configfile> ]>
+S<[ B<--port> I<port> ]>
+S<[ B<--proxy> I<proxy> ]>
+S<[ B<--version> ]>
+
+B<p0rn-proxy>
+S<[ B<-a> I<addr> ]>
+S<[ B<-c> I<configfile> ]>
+S<[ B<-p> I<port> ]>
+S<[ B<-P> I<proxy> ]>
+S<[ B<-V> ]>
+
+=head1 OVERVIEW
+
+p0rn-proxy is a small and simple proxy written in Perl.  It adds some
+links to the top of each HTML page that allow you to mark a page as
+thumbnail site in order to blacklist it, as a site containing pictures
+or as a picture site worth downloading.  It also allows you to access
+and administrate the proxy link database.
+
+=head1 DESCRIPTION
+
+Just start B<p0rn-proxy>.  This will by default create a proxy running
+on http://localhost:8080 (it will fail if something else is already
+running on this port).  Then point your browser to the proxy.  Browse
+some website and see all those extra links at the top of each page.
+Now browse some p0rn and start blacklisting those annoying thumbnail
+sites without real content.  After marking pages for download, run
+L<p0rn-download(1)> to actually get them.
+
+=head2 Switches
+
+=over 5
+
+=item B<--addr> I<addr> | B<-a> I<addr>
+
+This is the IP address that p0rn-proxy will bind to.  This address
+(together with the correct port) must be configured in your browser to
+make use of the proxy.
+
+Be careful: Everybody who can reach the port on this address can use
+your proxy.  You should bind to an address only reachable from your
+local net or use a packet filter to 'guard' japana from the outside.
+
+The address '0.0.0.0' will bind p0rn-proxy to all of your network
+devices.
+
+Default is to bind to address '127.0.0.1' as this address can only be
+accessed from your local computer and is not accessible from the
+network.  Please take care when binding to another address.
+
+=item B<--configfile> I<configfile> | B<-c> I<configfile>
+
+The options from the given configuration file will be read.  These
+options can be overridden by other command line arguments.
+
+Default is not to read a configuration file.
+
+=item B<--port> I<port> | B<-p> I<port>
+
+This is the port on which the proxy listens to your incoming requests.
+This port (together with the correct address) must be configured in
+your browser to make use of the proxy.
+
+Default setting is port 8080.
+
+=item B<--proxy> I<proxy> | B<-P> I<proxy>
+
+If this variable contains a value, the given proxy is used by
+p0rn-proxy.  This allows you to chain multiple proxies together.
+
+Example: If you need a proxy to access the Internet then point your
+browser to the p0rn-proxy and in turn point p0rn-proxy to your
+original proxy.
+
+Set this to 'none' to use no proxy at all.
+
+Default is to use the environment variable ${http_proxy}.
+
+=item B<--version> | B<-V>
+
+This prints the current version of japana and exits.
+
+=back
+
+=head2 Configuration file format
+
+Configuration is also possible via configuration files.  Every command
+line switch is possible in a configuration file.  Empty lines and
+lines starting with B<#> are ignored.
+
+Instead of B<--port 3128> you would put this line in the configuration file
+
+ port = 3128
+
+and so on and so forth.
+
+=head1 FILES
+
+All data is stored in a database.  By default, it is located in
+B<./p0rn.db> (yes, that's the directory from which you're starting
+p0rn-proxy).  Is you want to change this, set the environment variable
+B<P0RNDBLOCATION> (the second letter is a zero) to another path and
+filename.
+
+=head1 SEE ALSO
+
+L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
+
+=head1 MODULES NEEDED
+
+ use AppConfig;
+ use DBM:Deep;
+ use HTTP::Daemon;
+ use LWP::UserAgent;
+
+These modules can be obtained from L<http://www.cpan.org>.
+
+=head1 BUGS
+
+In the default configuration, p0rn-proxy supports B<NO ACCESS
+CONTROL!> Everyone with access to the proxy port on your system will
+be able to use the proxy.  Please bind japana to a port that is either
+only available from your local network or protected by a packet
+filter.
+
+Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
+
+=head1 AUTHOR
+
+p0rn-proxy was written by Christian Garbs <F<mitch@cgarbs.de>>.
+
+=head1 AVAILABILITY
+
+Look for updates at L<http://www.cgarbs.de/p0rn-comfort.en.html>.
+
+=head1 COPYRIGHT
+
+p0rn-proxy is licensed under the GNU GPL.
+
+=cut
+
+######[ Global Variables ]
+#
+
+my $CVSVERSION = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my ($status, $base, $ua, $parser);
 my @pics;
 my @pages;
 my ($count_pic, $count_thumb, $count_empty) = (0, 0, 0);
 
-sub debug
+######[ Subroutines ]
+#
+
+sub debug(@)
+# print debugging message
 {
     warn "@_\n";
 }
 
+sub mark_down($)
+# add link to download list
+{
+    $ua->get("${Static::PROXY_CTRL_BASE}/${Static::PROXY_MARK_DOWNLOAD}/$_[0]");
+}
+
+sub mark_thumb($)
+# add link to thumbnail list
+{
+    $ua->get("${Static::PROXY_CTRL_BASE}/${Static::PROXY_MARK_THUMB}/$_[0]");
+}
+
+sub unmark_thumb($)
+# remove link from thumbnail list
+{
+    $ua->get("${Static::PROXY_CTRL_BASE}/${Static::PROXY_UNMARK_THUMB}/$_[0]");
+}
+
 sub start_handler
+# callback for HTML::Parser to react on link tags
 {
     return unless shift eq "a";
     my $attr = shift;
@@ -39,7 +210,7 @@ sub start_handler
     return unless defined $link;
     $link =~ s/\#.*$//;
     return if $link eq $base;
-    return if $link =~ m,^http://www.cgarbs.de/PROXYCONTROL/,;
+    return if $link =~ m,^$Static::PROXY_CTRL_BASE,;
     return if $link =~ /^javascript:/;
     return if $link =~ /^mailto:/;
     return if $link =~ /^\s*$/;
@@ -54,9 +225,9 @@ sub start_handler
 }
 
 sub parse_page($$)
+# parse an HTML page
 {
-    my $response = shift;
-    my $urls = shift;
+    my ($response, $urls) = (@_);
     
     $base = $response->base;
     @pics = ();
@@ -68,11 +239,11 @@ sub parse_page($$)
     if (@pics + @pages > 0) {
 	if (@pics > @pages) {
 	    $status .= 'PICTURE';
-	    $ua->get($is_pic . $base);
+	    mark_down($base);
 	    $count_pic++;
 	} else {
 	    $status .= 'thumbnail';
-	    $ua->get($is_thumb . $base);
+	    mark_thumb($base);
 	    push @{$urls}, (@pages);
 	    $count_thumb++;
 	}
@@ -82,7 +253,9 @@ sub parse_page($$)
     }
 }
 
-sub check_url
+sub check_url($$);
+sub check_url($$)
+# fetch an HTML page and process it
 {
     my ($url, $recurse) = @_;
     my @urls;
@@ -110,13 +283,80 @@ sub check_url
     }
 }
 
+sub check_proxy($)
+# check for a running p0rn-proxy
+{
+    my $response = $ua->get("${Static::PROXY_CTRL_BASE}/${Static::PROXY_GET_VERSION}/_nouri_");
+    if ($response->is_success) {
+	foreach (split /\n/, $response->content) {
+	    if ( /^VERSION: (.*)$/) {
+		print "found p0rn-proxy $1\n";
+		last;
+	    }
+	}
+    } else {
+	print "no p0rn-proxy found at '$_[0]'\n";
+	exit 1;
+    }
+}
 
-# read proxy settings
-# detect proxy
+sub print_usage()
+# prints a short help text and exits
+{
+    print << "EOF";
 
-my $start = shift;
-my $recurse = shift;
-die "no url given\n" unless defined $start;
-$recurse = 1 unless defined $recurse;
-check_url($start, $recurse);
+Usage: p0rn-bot [options] start_url
+Supported options (long and short forms):
+  -d, --depth         : set link recursion depth
+  -h, --help          : print usage and exit
+  -P, --proxy         : set proxy to use
+  -v, --version       : print version number and exit
+EOF
+;
+    exit 0;
+}
+
+######[ Main program ]
+#
+   
+print "this is p0rn-bot ${Static::VERSION}/${CVSVERSION}\n";
+
+# define configuration options
+my $config = AppConfig->new( { CASE => 1 } );
+$config->define( 'depth|d=s',         { DEFAULT => '2' } );
+$config->define( 'proxy|P=s',         { DEFAULT => 'http://localhost:8080' } );
+$config->define( 'version|V!' );
+$config->define( 'help|h!' );
+
+# override configuration with command line arguments
+$config->getopt( qw(no_ignore_case), [ @ARGV ] );
+my $starturl = shift;
+
+# if we are to just print the version number, then quit now
+exit if $config->version();
+		 
+# if we are to just print help, then do it now
+print_usage() if $config->help();
+
+# create UserAgent
+$ua = LWP::UserAgent->new;
+$ua->agent("p0rn-bot ${Static::VERSION}/${CVSVERSION}");
+$ua->timeout(10);
+$ua->proxy('http', $config->proxy());
+
+# check settings
+check_proxy($config->proxy());
+die "no url given\n" unless (defined $starturl and $starturl ne '');
+
+# create HTML Parser
+$parser = HTML::Parser->new(api_version => 3);
+$parser->handler( start => \&start_handler, "tagname,attr");
+
+# unhide start URL
+unmark_thumb($starturl);
+
+# go
+check_url($starturl, $config->depth());
+
+# finished
 print "finished.  pic/thumb/empty: ${count_pic}/${count_thumb}/${count_empty}\n";
