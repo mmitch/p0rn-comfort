@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.8 2004-11-20 13:49:07 mitch Exp $
+# $Id: p0rn-bot,v 1.9 2004-11-20 13:55:27 mitch Exp $
 #
 # download selected p0rn
 #
@@ -23,6 +23,7 @@ my $parser = HTML::Parser->new(api_version => 3);
 $parser->handler( start => \&start_handler, "tagname,attr");
 my @pics;
 my @pages;
+my ($count_pic, $count_thumb, $count_empty) = (0, 0, 0);
 
 sub debug
 {
@@ -68,13 +69,16 @@ sub parse_page($$)
 	if (@pics > @pages) {
 	    $status .= 'PICTURE';
 	    $ua->get($is_pic . $base);
+	    $count_pic++;
 	} else {
 	    $status .= 'thumbnail';
 	    $ua->get($is_thumb . $base);
 	    push @{$urls}, (@pages);
+	    $count_thumb++;
 	}
     } else {
 	$status .= "empty";
+	$count_empty++;
     }
 }
 
@@ -115,3 +119,4 @@ my $recurse = shift;
 die "no url given\n" unless defined $start;
 $recurse = 1 unless defined $recurse;
 check_url($start, $recurse);
+print "finished.  pic/thumb/empty: ${count_pic}/${count_thumb}/${count_empty}\n";
