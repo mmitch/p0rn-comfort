@@ -1,16 +1,22 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.2 2004-11-14 18:48:39 mitch Exp $
+# $Id: p0rn-bot,v 1.3 2004-11-14 19:23:03 mitch Exp $
 use strict;
 
 use LWP::UserAgent;
 use HTML::Parser;
 
+my $is_thumb = 'http://www.cgarbs.de/PROXYCONTROL/mark_as_thumb/';
+my $is_pic = 'http://www.cgarbs.de/PROXYCONTROL/mark_as_download/';
+
+my $status;
 my $base;
 my $ua = LWP::UserAgent->new;
 $ua->timeout(10);
-$ua->env_proxy;
+$ua->proxy(['http'], 'http://localhost:12345/');
 my $parser = HTML::Parser->new(api_version => 3);
 $parser->handler( start => \&start_handler, "tagname,attr");
+my @pics;
+my @pages;
 
 sub debug
 {
@@ -23,35 +29,78 @@ sub start_handler
     my $attr = shift;
     my $link = $attr->{href};
 
-    return if ($link =~ /^javascript:/);
+    return unless defined $link;
+    $link =~ s/\#.*$//;
+    return if $link eq $base;
+    return if $link =~ m,^http://www.cgarbs.de/PROXYCONTROL/,;
+    return if $link =~ /^javascript:/;
+    return if $link =~ /^mailto:/;
+    return if $link =~ /^\s*$/;
     $link = $base . $link unless $link =~ m,^http://,;
 
-    debug $link;
+    if ($link =~ /\.jpe?g$/i) {
+	push @pics, $link;
+    } else {
+	push @pages, $link;
+    }
 }
 
-sub parse_page($)
+sub parse_page($$)
 {
     my $response = shift;
-
+    my $urls = shift;
+    
     $base = $response->base;
+    @pics = ();
+    @pages = ();
     $parser->parse($response->content);
+
+    $status .= $base . ' ' . @pics . '/' . @pages . ' ';
+
+    if (@pics + @pages > 0) {
+	if (@pics > @pages) {
+	    $status .= 'PICTURE';
+	    $ua->get($is_pic . $base);
+	} else {
+	    $status .= 'thumbnail';
+	    $ua->get($is_thumb . $base);
+	    push @{$urls}, (@pages);
+	}
+    } else {
+	$status .= "empty";
+    }
 }
 
 sub check_url
 {
     my ($url, $recurse) = @_;
+    my @urls;
 
     return unless defined $url;
     $recurse = 0 unless defined $recurse;
-
-    debug "GET $url";
+    
+    $status = sprintf "[%02d] ", $recurse;
     my $response = $ua->get($url);
-
+    
     if ($response->is_success) {
-	debug "GET ok";
-	parse_page $response;
-	
+	parse_page( $response, \@urls );
+    } else {
+	$status .= "$url failed";
+    }
+    
+    debug $status;
+
+    if ($recurse) {
+	# dedupe
+	my %urls = map { $_ => 0 } @urls;
+	foreach $url (keys %urls) {
+	    check_url( $url, $recurse - 1 );
+	}
     }
 }
 
-check_url('http://www.teenhouse.ch/main.shtml');
+my $start = shift;
+my $recurse = shift;
+die "no url given\n" unless defined $start;
+$recurse = 0 unless defined $recurse;
+check_url($start, $recurse);
