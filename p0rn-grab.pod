@@ -1,4 +1,4 @@
-# $Id: p0rn-grab.pod,v 1.1 2004-05-14 20:45:13 mitch Exp $
+# $Id: p0rn-grab.pod,v 1.2 2004-05-14 20:50:10 mitch Exp $
 # p0rn-grab manpage
 # (C) by Christian Garbs <mitch@cgarbs.de>
 # Licensed under GNU GPL
@@ -26,8 +26,11 @@ L<p0rn-proxy(1)>, L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
 =head1 PROGRAMS NEEDED
 
 =over
+
 =item lynx: L<http://lynx.browser.org/>
+
 =item wget: L<http://wget.sunsite.dk/>
+
 =back
 
 =head1 BUGS
