@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-proxy,v 1.18 2004-05-16 19:32:47 mitch Exp $
+# $Id: p0rn-proxy,v 1.19 2004-05-16 19:34:44 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -140,7 +140,7 @@ L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
  use HTTP::Daemon;
  use LWP::UserAgent;
 
-These modules can be obtained at L<http://www.cpan.org>.
+These modules can be obtained from L<http://www.cpan.org>.
 
 =head1 BUGS
 
@@ -169,7 +169,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.3-dev";
 my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
 my ($ua, $thumbs, $pics, $downs);
