@@ -1,0 +1,46 @@
+#!/usr/bin/perl -w
+# $Id: p0rn-download,v 1.1 2004-05-09 11:22:26 mitch Exp $
+#
+# download selected p0rn
+#
+use strict;
+use BerkeleyDB::Hash;
+use P0rn::DB;
+
+my $wait_after_download = 10;
+my $wait_after_cycle    = 30;
+
+my $hash = opendb('downz');
+
+my $done_something = 1;
+
+$SIG{CHLD} = 'IGNORE';
+
+while ($done_something) {
+
+    $done_something = 0;
+    
+    foreach $url (keys %{$hash}) {
+	
+	if ($hash->{$url} == 0) {
+
+	    if (!fork()) {
+		$hash->{$url} = 1;
+		system('./p0rn-grab', $url);
+		$hash->{$url} = 2;
+		exit;
+	    }
+
+	    sleep $wait_after_download;
+	    
+	}
+
+    }
+
+    sleep $wait_after_cycle;
+
+}
+
+untie %{$hash};
+
+print "\nFINISHED.\n\n";
