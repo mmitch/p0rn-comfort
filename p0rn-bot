@@ -1,7 +1,12 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.6 2004-11-16 18:01:33 mitch Exp $
-use strict;
+# $Id: p0rn-bot,v 1.7 2004-11-19 17:23:59 mitch Exp $
+#
+# download selected p0rn
+#
+# 2004 (C) by Christian Garbs <mitch@cgarbs.de>
+# Licensed under GNU GPL.  See COPYING for details.
 
+use strict;
 use LWP::UserAgent;
 use HTML::Parser;
 
@@ -36,6 +41,11 @@ sub start_handler
     return if $link =~ /^javascript:/;
     return if $link =~ /^mailto:/;
     return if $link =~ /^\s*$/;
+    
+    if ($base !~ m,/$, and $link !~ m,^/,) {
+	$link = '/' . $link;
+    }
+
     $link = $base . $link unless $link =~ m,^http://,;
 
     if ($link =~ /\.(jpe?g|wmv|mpe?g|avi)$/i) {
@@ -98,6 +108,10 @@ sub check_url
 	}
     }
 }
+
+
+# read proxy settings
+# detect proxy
 
 my $start = shift;
 my $recurse = shift;
