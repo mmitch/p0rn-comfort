@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: p0rn-proxy,v 1.10 2004-05-09 18:27:28 mitch Exp $
+# $Id: p0rn-proxy,v 1.11 2004-05-14 18:54:17 mitch Exp $
 
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -18,14 +18,143 @@ use HTTP::Status;
 use LWP::UserAgent;
 use P0rn::DB;
 
-# TODO:
-# - gezippte Übertragung wieder einbauen
-#
+=head1 NAME
+
+p0rn-proxy - HTTP proxy for comfortably browsing p0rn
+
+=head1 SYNOPSIS
+
+B<p0rn-proxy>
+
+S<[ B<--addr> I<addr> ]>
+S<[ B<--configfile> I<configfile> ]>
+S<[ B<--port> I<port> ]>
+S<[ B<--proxy> I<proxy> ]>
+S<[ B<--version> ]>
+
+B<p0rn-proxy>
+S<[ B<-a> I<addr> ]>
+S<[ B<-c> I<configfile> ]>
+S<[ B<-p> I<port> ]>
+S<[ B<-P> I<proxy> ]>
+S<[ B<-V> ]>
+
+=head1 OVERVIEW
+
+p0rn-proxy is a small and simple proxy written in Perl.  It adds some
+links to the top of each HTML page that allow you to mark a page as
+thumbnail site in order to blacklist it, as a site containing pictures
+or as a picture site worth downloading.  It also allows you to access
+and administrate the proxy link database.
+
+=head1 DESCRIPTION
+
+Just start B<p0rn-proxy>.  This will by default create a proxy running
+on http://localhost:8080 (it will fail if something else is already
+running on this port).  Then point your browser to the proxy.  Browse
+some website and see all those extra links at the top of each page.
+Now browse some p0rn and start blacklisting those annoying thumbnail
+sites without real content.
+
+=head2 Switches
+
+=over 5
+
+=item B<--addr> I<addr> | B<-a> I<addr>
+
+This is the IP address that p0rn-proxy will bind to.  This address
+(together with the correct port) must be configured in your browser to
+make use of the proxy.
+
+Be careful: Everybody who can reach the port on this address can use
+your proxy.  You should bind to an address only reachable from your
+local net or use a packet filter to 'guard' japana from the outside.
+
+The address '0.0.0.0' will bind p0rn-proxy to all of your network
+devices.
+
+Default is to bind to address '127.0.0.1' as this address can only be
+accessed from your local computer and is not accessible from the
+network.  Please take care when binding to another address.
+
+=item B<--configfile> I<configfile> | B<-c> I<configfile>
+
+The options from the given configuration file will be read.  These
+options can be overridden by other command line arguments.
+
+Default is not to read a configuration file.
+
+=item B<--port> I<port> | B<-p> I<port>
+
+This is the port on which the proxy listens to your incoming requests.
+This port (together with the correct address) must be configured in
+your browser to make use of the proxy.
+
+Default setting is port 8080.
+
+=item B<--proxy> I<proxy> | B<-P> I<proxy>
+
+If this variable contains a value, the given proxy is used by
+p0rn-proxy.  This allows you to chain multiple proxies together.
+
+Example: If you need a proxy to access the Internet then point your
+browser to the p0rn-proxy and in turn point p0rn-proxy to your
+original proxy.
+
+Set this to 'none' to use no proxy at all.
+
+Default is to use the environment variable ${http_proxy}.
+
+=item B<--version> | B<-V>
+
+This prints the current version of japana and exits.
+
+=back
+
+=head2 Configuration file format
+
+Configuration is also possible via configuration files.  Every command
+line switch is possible in a configuration file.  Empty lines and
+lines starting with B<#> are ignored.
+
+Instead of B<--port 3128> you would put this line in the configuration file
+
+ port = 3128
+
+and so on and so forth.
+
+=head1 MODULES NEEDED
+
+ use AppConfig;
+ use HTTP::Daemon;
+ use LWP::UserAgent;
+
+These modules can be obtained at <F<http://www.cpan.org>>.
+
+=head1 BUGS
+
+In the default configuration, p0rn-proxy supports B<NO ACCESS
+CONTROL!> Everyone with access to the proxy port on your system will
+be able to use the proxy.  Please bind japana to a port that is either
+only available from your local network or protected by a packet
+filter.
+
+Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
+
+=head1 AUTHOR
+
+p0rn-proxy was written by Christian Garbs <F<mitch@cgarbs.de>>.
+
+=head1 COPYRIGHT
+
+p0rn-proxy is licensed under the GNU GPL.
+
+=cut
 
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.2";
 my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
 my ($ua, $thumbs, $pics, $downs);
