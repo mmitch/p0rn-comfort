@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dblist,v 1.7 2004-05-21 20:58:58 mitch Exp $
+# $Id: p0rn-dblist,v 1.8 2004-05-26 09:00:25 mitch Exp $
 #
 # list tables from p0rn.db
 #
@@ -7,7 +7,6 @@
 # Licensed under GNU GPL.  See COPYING for details.
 
 use strict;
-use BerkeleyDB::Hash;
 use P0rn::DB;
 
 =head1 NAME
@@ -62,7 +61,7 @@ L<p0rn-proxy(1)>, L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
 
 =head1 MODULES NEEDED
 
- use BerkeleyDB::Hash;
+ use DBM::Deep;
 
 This module can be obtained from L<http://www.cpan.org>.
 
@@ -105,7 +104,4 @@ if ($verbose) {
 } else {
     print "$_\n" foreach (sort keys %{$hash});
 }
-
-untie %{$hash};
-
 

@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dbadd,v 1.6 2004-05-16 19:35:35 mitch Exp $
+# $Id: p0rn-dbadd,v 1.7 2004-05-26 09:00:57 mitch Exp $
 #
 # add links to p0rn.db
 #
@@ -7,7 +7,6 @@
 # Licensed under GNU GPL.  See COPYING for details.
 
 use strict;
-use BerkeleyDB::Hash;
 use P0rn::DB;
 
 =head1 NAME
@@ -52,7 +51,7 @@ L<p0rn-proxy(1)>, L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
 
 =head1 MODULES NEEDED
 
- use BerkeleyDB::Hash;
+ use DBM::Deep;
 
 This module can be obtained from L<http://www.cpan.org>.
 
@@ -86,7 +85,3 @@ while (my $line = <>) {
     }
     $hash->{$line} = $value;
 }
-
-untie %{$hash};
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.8 2004-05-18 17:56:56 mitch Exp $
+# $Id: p0rn-download,v 1.9 2004-05-26 08:59:47 mitch Exp $
 #
 # download selected p0rn
 #
@@ -7,7 +7,6 @@
 # Licensed under GNU GPL.  See COPYING for details.
 
 use strict;
-use BerkeleyDB::Hash;
 use P0rn::DB;
 
 =head1 NAME
@@ -41,7 +40,7 @@ L<p0rn-proxy(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>, L<p0rn-grab(1)>
 
 =head1 MODULES NEEDED
 
- use BerkeleyDB::Hash;
+ use DBM::Deep;
 
 This module can be obtained at <F<http://www.cpan.org>>.
 
@@ -79,27 +78,23 @@ my $done_something = 1;
 
 $SIG{CHLD} = 'IGNORE';
 
+my $hash = opendb('downz');
 while ($done_something) {
 
     $done_something = 0;
     
-    my $hash = opendb('downz');
     foreach my $url (keys %{$hash}) {
 	
 	if ($hash->{$url} == 0) {
 
 	    if (!fork()) {
 		warn "[[ START $url ]]\n";
-		my $myhash = opendb('downz');
-		exit if ($myhash->{$url});
-		$myhash->{$url} = 1;
-		untie %{$myhash};
+		exit if ($hash->{$url});
+		$hash->{$url} = 1;
 
 		system('./p0rn-grab', $url);
 
-		$myhash = opendb('downz');
-		$myhash->{$url} = 2;
-		untie %{$myhash};
+		$hash->{$url} = 2;
 		warn "[[ FINISHED $url ]]\n";
 		exit;
 	    }
@@ -110,7 +105,6 @@ while ($done_something) {
 	}
 
     }
-    untie %{$hash};
     sleep $wait_after_cycle;
 
 }
