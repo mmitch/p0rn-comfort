@@ -1,0 +1,19 @@
+++ $Id: ChangeLog,v 1.1 2004-05-15 08:05:19 mitch Exp $ ++
+  
+++ p0rn comfort changelog ++
+
+????/??/?? p0rn-comfort 0.0.3
+
+	* add changelog
+	
+2004/05/15 p0rn-comfort 0.0.2
+
+	* first official release
+	* fix p0rn-download bugs
+	* add manpages for all commands
+	* add p0rn-dbdump and p0rn-dbrestort scripts
+
+2004/05/09 p0rn-comfort 0.0.1
+
+	* unofficial release
+	
