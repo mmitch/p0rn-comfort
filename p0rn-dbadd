@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dbadd,v 1.1 2004-05-09 10:40:22 mitch Exp $
+# $Id: p0rn-dbadd,v 1.2 2004-05-11 15:57:49 mitch Exp $
 #
 # add contents to p0rn.db
 #
@@ -12,7 +12,12 @@ my $hash = opendb(shift);
 while (my $line = <>) {
     chomp $line;
     $line =~ s/\?.*$//;
-    $hash->{$line}=0;
+    my $value = 0;
+    if ($line =~ /^(\d)+\t(.*)$/) {
+	$value = $1;
+	$line  = $2;
+    }
+    $hash->{$line} = $value;
 }
 
 untie %{$hash};
