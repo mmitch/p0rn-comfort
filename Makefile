@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.5 2004-05-14 20:55:09 mitch Exp $
+# $Id: Makefile,v 1.6 2004-05-15 08:05:31 mitch Exp $
 #
 # dist-script for p0rn-comfort
 #
@@ -13,7 +13,7 @@ TARGZ=$(NAME)-$(VERSION).tar.gz
 PERLSCRIPTS=p0rn-dbadd p0rn-dbdel p0rn-dblist p0rn-download p0rn-proxy p0rn-dbrestore
 SHELLSCRIPTS=p0rn-dbdump p0rn-grab
 BINARIES=$(PERLSCRIPTS) $(SHELLSCRIPTS)
-OTHERFILES=README COPYRIGHT
+OTHERFILES=ChangeLog README COPYRIGHT
 
 DOCDIR=./docs
 POD2MANOPTS=--release=$(VERSION) --center=$(NAME) --section=1
