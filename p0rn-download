@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.1 2004-05-09 11:22:26 mitch Exp $
+# $Id: p0rn-download,v 1.2 2004-05-09 11:31:28 mitch Exp $
 #
 # download selected p0rn
 #
@@ -20,7 +20,7 @@ while ($done_something) {
 
     $done_something = 0;
     
-    foreach $url (keys %{$hash}) {
+    foreach my $url (keys %{$hash}) {
 	
 	if ($hash->{$url} == 0) {
 
