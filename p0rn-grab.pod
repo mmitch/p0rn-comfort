@@ -1,4 +1,4 @@
-# $Id: p0rn-grab.pod,v 1.6 2004-05-26 08:58:28 mitch Exp $
+# $Id: p0rn-grab.pod,v 1.7 2004-05-26 08:59:02 mitch Exp $
 #
 # p0rn-grab manpage
 #
@@ -7,7 +7,7 @@
 
 =head1 NAME
 
-p0rn-grab - download p0rn from an URL
+p0rn-grab - automatically download pictures and movies from an URL
 
 =head1 SYNOPSIS
 
