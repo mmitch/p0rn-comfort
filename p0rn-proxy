@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-proxy,v 1.19 2004-05-16 19:34:44 mitch Exp $
+# $Id: p0rn-proxy,v 1.20 2004-05-21 19:15:02 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -169,12 +169,13 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.3-dev";
 my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
 my ($ua, $thumbs, $pics, $downs);
 
 my @downs = ( 'queued', 'running', 'finished' );
+my $reload_after = 250; # reread databases after this many requests
 
 ######[ Subroutines ]
 #
@@ -394,7 +395,21 @@ print "- proxy started on ".$config->addr().":".$config->port()."\n";
 #  -> possible SIGPIPES when browser aborts request)
 $SIG{CHLD} = 'IGNORE';
 
+my $request = 0;
 while (my $conn = $proxy->accept) {
+    $request++;
+    if ($request > $reload_after) {
+	$request = 0;
+	untie %{$thumbs};
+	$thumbs = opendb('thumbz');
+	print "- thumbpages db reloaded\n";
+	untie %{$pics};
+	$pics = opendb('picz');
+	print "- picpages db reloaded\n";
+	untie %{$downs};
+	$downs = opendb('downz');
+	print "- download db reloaded\n";
+    }
     if (! fork()) {
 	# CHILD
 	while (my $request = $conn->get_request) {
