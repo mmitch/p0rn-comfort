@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.5 2004-11-14 19:32:48 mitch Exp $
+# $Id: p0rn-bot,v 1.6 2004-11-16 18:01:33 mitch Exp $
 use strict;
 
 use LWP::UserAgent;
@@ -102,5 +102,5 @@ sub check_url
 my $start = shift;
 my $recurse = shift;
 die "no url given\n" unless defined $start;
-$recurse = 0 unless defined $recurse;
+$recurse = 1 unless defined $recurse;
 check_url($start, $recurse);
