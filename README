@@ -1,0 +1,37 @@
+$Id: README,v 1.1 2004-05-09 10:50:20 mitch Exp $
+
+This is a suite for more comfortable p0rn browsing :-)
+
+Written by Christian Garbs <mitch@cgarbs.de>
+Licensed under GNU GPL.
+
+You need:
+- lynx
+- wget
+- bash
+- perl with working fork()
+- perl modules:
+  - AppConfig
+  - BerkeleyDB
+  - HTTP::Daemon
+  - HTTP::Response
+  - HTTP::Status
+  - LWP::UserAgent
+
+You do this:
+
+Start the proxy and point your browser to it.  Notice the extra
+functionality at the top of every page.
+
+Then find a p0rn-thumbnail site and start browsing it.  When you run
+across other thumbnail sites instead of content, select "mark as
+thumbnail page".  In the future, this page will not be loaded again.
+Should you by any means run into content, then you can select "mark as
+pictures" or "mark as pictures and download".  This will tell you
+when you visit a content site again that you've always seen (we don't
+really memorize all of our downloaded stuff, do we?).
+
+Run p0rn-download to start downloading all the pictures that you have
+selected for download.
+
+Comments, bug reports and enhancement requests are welcome.
