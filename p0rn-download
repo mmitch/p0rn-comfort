@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.3 2004-05-09 17:34:36 mitch Exp $
+# $Id: p0rn-download,v 1.4 2004-05-11 15:59:09 mitch Exp $
 #
 # download selected p0rn
 #
@@ -26,11 +26,15 @@ while ($done_something) {
 
 	    if (!fork()) {
 		warn "[[ START $url ]]\n";
-		my $undmeinhasherst = opendb('downz');
-		$hash->{$url} = 1;
+		my $myhash = opendb('downz');
+		$myhash->{$url} = 1;
+		untie %{$myhash};
+
 		system('./p0rn-grab', $url);
-		$undmeinhasherst->{$url} = 2;
-		untie %{$undmeinhasherst};
+
+		$myhash = opendb('downz');
+		$myhash->{$url} = 2;
+		untie %{$myhash};
 		warn "[[ FINISHED $url ]]\n";
 		exit;
 	    }
