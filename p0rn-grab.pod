@@ -1,4 +1,4 @@
-# $Id: p0rn-grab.pod,v 1.5 2004-05-26 08:58:16 mitch Exp $
+# $Id: p0rn-grab.pod,v 1.6 2004-05-26 08:58:28 mitch Exp $
 #
 # p0rn-grab manpage
 #
@@ -41,7 +41,7 @@ Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
 
 =head1 AUTHOR
 
-p0rn-dbrestore was written by Christian Garbs <F<mitch@cgarbs.de>>.
+p0rn-grab was written by Christian Garbs <F<mitch@cgarbs.de>>.
 
 =head1 AVAILABILITY
 
