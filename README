@@ -1,4 +1,4 @@
-$Id: README,v 1.3 2004-05-26 20:32:38 mitch Exp $
+$Id: README,v 1.4 2004-11-20 20:44:36 mitch Exp $
 
 This is a suite for more comfortable p0rn browsing :-)
 
@@ -15,10 +15,12 @@ You need:
 - perl modules:
   - AppConfig
   - DBM::Deep
+  - HTML::Parser
   - HTTP::Daemon
   - HTTP::Response
   - HTTP::Status
   - LWP::UserAgent
+  - URI
 
 You do this:
 
@@ -33,7 +35,11 @@ pictures" or "mark as pictures and download".  This will tell you
 when you visit a content site again that you've always seen (we don't
 really memorize all of our downloaded stuff, do we?).
 
-Run p0rn-download to start downloading all the pictures that you have
+If you don't want to browse the sites by hand, just point p0rn-bot to
+a p0rn-thumbnail site.  It will look at the pages and register them
+with p0rn-proxy as thumbnail or download pages automatically.
+
+Use p0rn-download to start downloading all the pictures that you have
 selected for download.
 
 Comments, bug reports and enhancement requests are welcome.
