@@ -1,0 +1,46 @@
+# $Id: p0rn-grab.pod,v 1.1 2004-05-14 20:45:13 mitch Exp $
+# p0rn-grab manpage
+# (C) by Christian Garbs <mitch@cgarbs.de>
+# Licensed under GNU GPL
+
+=head1 NAME
+
+p0rn-grab - download p0rn from an URL
+
+=head1 SYNOPSIS
+
+B<p0rn-grab> B<URL>
+
+=head1 OVERVIEW
+
+p0rn-grab downloads all pictures and movies from an URL.
+
+During download, a temporary directory is created in the current
+directory.  Downloaded files are then moved to a directory named
+B<./out>
+
+=head1 SEE ALSO
+
+L<p0rn-proxy(1)>, L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
+
+=head1 PROGRAMS NEEDED
+
+=over
+=item lynx: L<http://lynx.browser.org/>
+=item wget: L<http://wget.sunsite.dk/>
+=back
+
+=head1 BUGS
+
+Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
+
+=head1 AUTHOR
+
+p0rn-dbrestore was written by Christian Garbs <F<mitch@cgarbs.de>>.
+
+=head1 COPYRIGHT
+
+p0rn-dbrestore is licensed under the GNU GPL.
+
+=cut
+
