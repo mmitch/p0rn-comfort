@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: p0rn-proxy,v 1.9 2004-05-09 11:39:02 mitch Exp $
+# $Id: p0rn-proxy,v 1.10 2004-05-09 18:27:28 mitch Exp $
 
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -25,7 +25,7 @@ use P0rn::DB;
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.2";
 my $URLBASE = 'http://www.cgarbs.de/PROXYCONTROL';
 my ($ua, $thumbs, $pics, $downs);
@@ -93,6 +93,10 @@ sub execute_proxy_command($)
 	    }
 	    $response->header(refresh => '5; url=javascript:window.close()');
 
+	} elsif ($cmd eq 'unmark_as_download' ) {
+	    delete $downs->{$urishort};
+	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the download list";
+
 	} elsif ($cmd eq 'admin') {
 
 	    $content .= '<h1>p0rn-proxy main menu</h1><ul><ul><ul>' .
@@ -114,7 +118,7 @@ sub execute_proxy_command($)
 	    $content .= '<h1>picture pages</h1>';
 
 	    foreach my $u (sort keys %{$pics}) {
-		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+		$content .= "[<a href=\"$URLBASE/unmark_as_pic/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
 	} elsif ($cmd eq 'list_downs') {
@@ -124,19 +128,19 @@ sub execute_proxy_command($)
 	    $content .= '<h2>queued</h2>';
 	    foreach my $u (sort keys %{$downs}) {
 		next unless $downs->{$u} == 0;
-		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+		$content .= "[<a href=\"$URLBASE/unmark_as_download/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
 	    $content .= '<h2>running</h2>';
 	    foreach my $u (sort keys %{$downs}) {
 		next unless $downs->{$u} == 1;
-		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+		$content .= "[<a href=\"$URLBASE/unmark_as_download/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
 	    $content .= '<h2>finished</h2>';
 	    foreach my $u (sort keys %{$downs}) {
 		next unless $downs->{$u} == 2;
-		$content .= "[<a href=\"$URLBASE/unmark_as_thumb/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+		$content .= "[<a href=\"$URLBASE/unmark_as_download/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
 	} else {
