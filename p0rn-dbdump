@@ -1,9 +1,11 @@
 #!/bin/bash
-# $Id: p0rn-dbdump,v 1.1 2004-05-14 16:36:24 mitch Exp $
+# $Id: p0rn-dbdump,v 1.2 2004-05-14 16:53:54 mitch Exp $
 #
 # dumps the complete p0rn.db
 #
 for TABLE in thumbz picz downz; do
+    echo dumping table $TABLE 1>&2
     echo "?${TABLE}&"
     p0rn-dblist -v ${TABLE}
 done
+echo finished 1>&2
