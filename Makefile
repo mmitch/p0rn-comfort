@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.6 2004-05-15 08:05:31 mitch Exp $
+# $Id: Makefile,v 1.7 2004-11-20 19:56:20 mitch Exp $
 #
 # dist-script for p0rn-comfort
 #
@@ -6,7 +6,7 @@
 # Licensed under GNU GPL.  See COPYING for details.
 
 NAME=p0rn-comfort
-VERSION=$(shell grep 'my \$$VERSION' p0rn-proxy | cut -d \" -f 2)
+VERSION=$(shell grep 'our \$$VERSION' P0rn/Static.pm | cut -d \" -f 2)
 DISTDIR=$(NAME)-$(VERSION)
 TARGZ=$(NAME)-$(VERSION).tar.gz
 
