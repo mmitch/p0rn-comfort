@@ -1,6 +1,9 @@
-# $Id: DB.pm,v 1.2 2004-05-14 16:57:02 mitch Exp $
+# $Id: DB.pm,v 1.3 2004-05-14 20:51:38 mitch Exp $
 #
-# DB routines for p0rn-proxy
+# DB routines for p0rn-comfort
+#
+# 2004 (C) by Christian Garbs <mitch@cgarbs.de>
+# Licensed under GNU GPL.  See COPYING for details.
 
 my $db_env = new BerkeleyDB::Env { -Flags => BerkeleyDB::DB_INIT_CDB  };
 

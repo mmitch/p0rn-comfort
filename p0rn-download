@@ -1,8 +1,11 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.5 2004-05-14 20:49:58 mitch Exp $
+# $Id: p0rn-download,v 1.6 2004-05-14 20:53:16 mitch Exp $
 #
 # download selected p0rn
 #
+# 2004 (C) by Christian Garbs <mitch@cgarbs.de>
+# Licensed under GNU GPL.  See COPYING for details.
+
 use strict;
 use BerkeleyDB::Hash;
 use P0rn::DB;

@@ -1,7 +1,9 @@
-# $Id: p0rn-dbdump.pod,v 1.2 2004-05-14 20:38:40 mitch Exp $
+# $Id: p0rn-dbdump.pod,v 1.3 2004-05-14 20:54:02 mitch Exp $
+#
 # p0rn-dbdump manpage
-# (C) by Christian Garbs <mitch@cgarbs.de>
-# Licensed under GNU GPL
+#
+# 2004 (C) by Christian Garbs <mitch@cgarbs.de>
+# Licensed under GNU GPL.  See COPYING for details.
 
 =head1 NAME
 

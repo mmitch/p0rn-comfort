@@ -1,8 +1,11 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dbadd,v 1.4 2004-05-14 20:36:29 mitch Exp $
+# $Id: p0rn-dbadd,v 1.5 2004-05-14 20:54:30 mitch Exp $
 #
 # add links to p0rn.db
 #
+# 2004 (C) by Christian Garbs <mitch@cgarbs.de>
+# Licensed under GNU GPL.  See COPYING for details.
+
 use strict;
 use BerkeleyDB::Hash;
 use P0rn::DB;
