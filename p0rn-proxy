@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: p0rn-proxy,v 1.6 2004-05-09 10:14:12 mitch Exp $
+# $Id: p0rn-proxy,v 1.7 2004-05-09 10:34:55 mitch Exp $
 
 # p0rn-proxy -- a proxy for comfortably browsing pr0n
 #
@@ -16,7 +16,7 @@ use HTTP::Daemon;
 use HTTP::Response;
 use HTTP::Status;
 use LWP::UserAgent;
-use Pr0nxy::DB;
+use P0rn::DB;
 
 # TODO:
 # - gezippte Übertragung wieder einbauen
@@ -132,7 +132,7 @@ sub send_proxyauth()
 ######[ Main program ]
 #
    
-my $CVSVERSION = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $VERSION = "0.0.1";
 print "this is p0rn-proxy ${VERSION}/${CVSVERSION}\n";
 
