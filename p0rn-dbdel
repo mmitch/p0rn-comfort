@@ -1,11 +1,68 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dbdel,v 1.1 2004-05-09 10:40:24 mitch Exp $
+# $Id: p0rn-dbdel,v 1.2 2004-05-14 19:12:19 mitch Exp $
 #
-# remove contents from p0rn.db
+# remove links from p0rn.db
 #
 use strict;
 use BerkeleyDB::Hash;
 use P0rn::DB;
+
+=head1 NAME
+
+p0rn-dbdel - remove links from the p0rn database
+
+=head1 SYNOPSIS
+
+B<p0rn-dbdel> I<table>
+
+=head1 OVERVIEW
+
+p0rn-dbdel removes links from the p0rn database.  There should be no need
+to call this program directly.
+
+=head1 DESCRIPTION
+
+You must set the table name upon startup.  Existing database tables
+are B<thumbz> for thumbnails, B<picz> for pictures and B<downz> for
+download urls.  Links are then read from STDIN and removed from the
+database.
+
+=head1 DATA FORMAT
+
+Format is one plain URL per line with no leading or trailing
+whitespace.
+
+=head1 FILES
+
+All data is stored in a database.  By default, it is located in
+B<./p0rn.db> (yes, that's the directory from which you're starting
+p0rn-proxy).  Is you want to change this, set the environment variable
+B<P0RNDBLOCATION> (the second letter is a zero) to another path and
+filename.
+
+=head1 SEE ALSO
+
+L<p0rn-proxy(1)>, L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
+
+=head1 MODULES NEEDED
+
+ use BerkeleyDB::Hash;
+
+This module can be obtained at <F<http://www.cpan.org>>.
+
+=head1 BUGS
+
+Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
+
+=head1 AUTHOR
+
+p0rn-dbdel was written by Christian Garbs <F<mitch@cgarbs.de>>.
+
+=head1 COPYRIGHT
+
+p0rn-dbdel is licensed under the GNU GPL.
+
+=cut
 
 my $hash = opendb(shift);
 

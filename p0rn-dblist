@@ -1,11 +1,81 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dblist,v 1.2 2004-05-09 17:30:10 mitch Exp $
+# $Id: p0rn-dblist,v 1.3 2004-05-14 19:11:50 mitch Exp $
 #
-# dump contents from p0rn.db
+# list tables from p0rn.db
 #
 use strict;
 use BerkeleyDB::Hash;
 use P0rn::DB;
+
+=head1 NAME
+
+p0rn-dblist - list links in the p0rn database
+
+=head1 SYNOPSIS
+
+B<p0rn-dblist> S< [ B<-v> ] I<table>>
+
+=head1 OVERVIEW
+
+p0rn-dblist lists links in the p0rn database.  There should be no need
+to call this program directly.
+
+=head1 DESCRIPTION
+
+You must set the table name upon startup.  Existing database tables
+are B<thumbz> for thumbnails, B<picz> for pictures and B<downz> for
+download urls.  Links are then read from the database and written to
+STDOUT.
+
+=head2 Switches
+
+=over 5
+
+=item B<-v>
+
+This enables the alternative data format.
+
+=back
+
+=head1 DATA FORMAT
+
+Format is one plain URL per line with no leading or trailing
+whitespace.
+
+Alternative format is a positive integer followed by a tab and a plain
+URL per line.
+
+=head1 FILES
+
+All data is stored in a database.  By default, it is located in
+B<./p0rn.db> (yes, that's the directory from which you're starting
+p0rn-proxy).  Is you want to change this, set the environment variable
+B<P0RNDBLOCATION> (the second letter is a zero) to another path and
+filename.
+
+=head1 SEE ALSO
+
+L<p0rn-proxy(1)>, L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
+
+=head1 MODULES NEEDED
+
+ use BerkeleyDB::Hash;
+
+This module can be obtained at <F<http://www.cpan.org>>.
+
+=head1 BUGS
+
+Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
+
+=head1 AUTHOR
+
+p0rn-dblist was written by Christian Garbs <F<mitch@cgarbs.de>>.
+
+=head1 COPYRIGHT
+
+p0rn-dblist is licensed under the GNU GPL.
+
+=cut
 
 my $verbose = shift;
 if (defined $verbose) {
