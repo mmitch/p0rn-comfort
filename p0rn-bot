@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.11 2004-11-20 20:52:31 mitch Exp $
+# $Id: p0rn-bot,v 1.12 2004-11-20 21:04:16 mitch Exp $
 #
-# download selected p0rn
+# automatically register pages with p0rn-proxy
 #
 # 2004 (C) by Christian Garbs <mitch@cgarbs.de>
 # Licensed under GNU GPL.  See COPYING for details.
@@ -15,91 +15,62 @@ use URI;
 
 =head1 NAME
 
-p0rn-proxy - HTTP proxy for comfortably browsing p0rn
+p0rn-bot - register pages with p0rn-proxy automatically
 
 =head1 SYNOPSIS
 
-B<p0rn-proxy>
+B<p0rn-bot>
 
-S<[ B<--addr> I<addr> ]>
-S<[ B<--configfile> I<configfile> ]>
-S<[ B<--port> I<port> ]>
+S<[ B<--depth> I<depth> ]>
+S<[ B<--help> ]>
 S<[ B<--proxy> I<proxy> ]>
 S<[ B<--version> ]>
 
 B<p0rn-proxy>
-S<[ B<-a> I<addr> ]>
 S<[ B<-c> I<configfile> ]>
-S<[ B<-p> I<port> ]>
+S<[ B<-h> ]>
 S<[ B<-P> I<proxy> ]>
 S<[ B<-V> ]>
 
 =head1 OVERVIEW
 
-p0rn-proxy is a small and simple proxy written in Perl.  It adds some
-links to the top of each HTML page that allow you to mark a page as
-thumbnail site in order to blacklist it, as a site containing pictures
-or as a picture site worth downloading.  It also allows you to access
-and administrate the proxy link database.
+p0rn-bot is a script that automates p0rn-proxy handling.  It starts
+with a given page and then follows all links recursivly.  All pages
+encountered are registered with p0rn-proxy either as thumnails sites
+or as galleries for download.
 
 =head1 DESCRIPTION
 
-Just start B<p0rn-proxy>.  This will by default create a proxy running
-on http://localhost:8080 (it will fail if something else is already
-running on this port).  Then point your browser to the proxy.  Browse
-some website and see all those extra links at the top of each page.
-Now browse some p0rn and start blacklisting those annoying thumbnail
-sites without real content.  After marking pages for download, run
+Be sure to have L<p0rn-proxy(1)> running.  Then start B<p0rn-bot> with
+the URL of a known thumbnail gallery page.  Now wait and see p0rn-bot
+do it's work.
+
+When p0rn-bot is finished, the pages are marked for download.  Run
 L<p0rn-download(1)> to actually get them.
 
 =head2 Switches
 
 =over 5
 
-=item B<--addr> I<addr> | B<-a> I<addr>
+=item B<--depth> I<depth> | B<-d> I<depth>
 
-This is the IP address that p0rn-proxy will bind to.  This address
-(together with the correct port) must be configured in your browser to
-make use of the proxy.
+This sets how 'deep' links are being followed.  0 will only look at
+the given start URL, 1 will visit the start URL plus all sites that
+are linked on it and so forth...
 
-Be careful: Everybody who can reach the port on this address can use
-your proxy.  You should bind to an address only reachable from your
-local net or use a packet filter to 'guard' japana from the outside.
+Default depth is 2.
 
-The address '0.0.0.0' will bind p0rn-proxy to all of your network
-devices.
+=item B<--help> | B<-h>
 
-Default is to bind to address '127.0.0.1' as this address can only be
-accessed from your local computer and is not accessible from the
-network.  Please take care when binding to another address.
-
-=item B<--configfile> I<configfile> | B<-c> I<configfile>
-
-The options from the given configuration file will be read.  These
-options can be overridden by other command line arguments.
-
-Default is not to read a configuration file.
-
-=item B<--port> I<port> | B<-p> I<port>
-
-This is the port on which the proxy listens to your incoming requests.
-This port (together with the correct address) must be configured in
-your browser to make use of the proxy.
-
-Default setting is port 8080.
+This prints a short help text and exits.
 
 =item B<--proxy> I<proxy> | B<-P> I<proxy>
 
-If this variable contains a value, the given proxy is used by
-p0rn-proxy.  This allows you to chain multiple proxies together.
+This gives the address where the p0rn-proxy is running.  It is given
+in the form 'http://hostname:portnumber'.
 
-Example: If you need a proxy to access the Internet then point your
-browser to the p0rn-proxy and in turn point p0rn-proxy to your
-original proxy.
-
-Set this to 'none' to use no proxy at all.
-
-Default is to use the environment variable ${http_proxy}.
+Default is to use 'http://localhost:8080' as this is the default port
+that p0rn-proxy listens to.
 
 =item B<--version> | B<-V>
 
@@ -107,52 +78,27 @@ This prints the current version of japana and exits.
 
 =back
 
-=head2 Configuration file format
-
-Configuration is also possible via configuration files.  Every command
-line switch is possible in a configuration file.  Empty lines and
-lines starting with B<#> are ignored.
-
-Instead of B<--port 3128> you would put this line in the configuration file
-
- port = 3128
-
-and so on and so forth.
-
-=head1 FILES
-
-All data is stored in a database.  By default, it is located in
-B<./p0rn.db> (yes, that's the directory from which you're starting
-p0rn-proxy).  Is you want to change this, set the environment variable
-B<P0RNDBLOCATION> (the second letter is a zero) to another path and
-filename.
-
 =head1 SEE ALSO
 
-L<p0rn-download(1)>, L<p0rn-dbdump(1)>, L<p0rn-dbrestore(1)>
+L<p0rn-proxy(1)>
 
 =head1 MODULES NEEDED
 
  use AppConfig;
- use DBM:Deep;
+ use HTML::Parser;
  use HTTP::Daemon;
  use LWP::UserAgent;
+ use URI;
 
 These modules can be obtained from L<http://www.cpan.org>.
 
 =head1 BUGS
 
-In the default configuration, p0rn-proxy supports B<NO ACCESS
-CONTROL!> Everyone with access to the proxy port on your system will
-be able to use the proxy.  Please bind japana to a port that is either
-only available from your local network or protected by a packet
-filter.
-
 Please report bugs by mail to <F<p0rn-bugs@cgarbs.de>>.
 
 =head1 AUTHOR
 
-p0rn-proxy was written by Christian Garbs <F<mitch@cgarbs.de>>.
+p0rn-bot was written by Christian Garbs <F<mitch@cgarbs.de>>.
 
 =head1 AVAILABILITY
 
@@ -160,14 +106,14 @@ Look for updates at L<http://www.cgarbs.de/p0rn-comfort.en.html>.
 
 =head1 COPYRIGHT
 
-p0rn-proxy is licensed under the GNU GPL.
+p0rn-bot is licensed under the GNU GPL.
 
 =cut
 
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my ($status, $base, $ua, $parser);
 my @pics;
 my @pages;
