@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.3 2004-05-14 18:43:48 mitch Exp $
+# $Id: Makefile,v 1.4 2004-05-14 20:46:11 mitch Exp $
 
 NAME=p0rn-comfort
 VERSION=$(shell grep 'my \$$VERSION' p0rn-proxy | cut -d \" -f 2)
@@ -29,6 +29,6 @@ dist:
 	mkdir $(DISTDIR)/$(DOCDIR)
 	cp $(BINARIES) $(OTHERFILES) $(DISTDIR)/
 	cp P0rn/DB.pm $(DISTDIR)/P0rn/
-	cp $(DOCDIR) $(DISTDIR)/$(DOCDIR)
+	cp $(DOCDIR)/* $(DISTDIR)/$(DOCDIR)
 	tar -c $(DISTDIR) -zvf $(TARGZ)
 	rm -rf $(DISTDIR)
