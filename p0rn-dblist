@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dblist,v 1.6 2004-05-16 19:34:26 mitch Exp $
+# $Id: p0rn-dblist,v 1.7 2004-05-21 20:58:58 mitch Exp $
 #
 # list tables from p0rn.db
 #
@@ -95,7 +95,13 @@ if (defined $verbose) {
 my $hash = opendb(shift);
 
 if ($verbose) {
-    print "$hash->{$_}\t$_\n" foreach (sort keys %{$hash});
+    foreach my $key (sort keys %{$hash}) {
+        my $value = $hash->{$key};
+        $value = 0 unless defined $value;
+        $value = 2 if $value > 2;
+        $value = 0 if $value < 0;
+        print "$value\t$key\n";
+    }
 } else {
     print "$_\n" foreach (sort keys %{$hash});
 }
