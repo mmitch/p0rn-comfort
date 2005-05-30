@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.9 2004-11-20 20:42:38 mitch Exp $
+# $Id: Makefile,v 1.10 2005-05-30 18:30:58 mitch Exp $
 #
 # dist-script for p0rn-comfort
 #
@@ -36,5 +36,5 @@ dist:
 	cp $(BINARIES) $(OTHERFILES) $(DISTDIR)/
 	for FILE in $(MODULES); do cp P0rn/$$FILE.pm $(DISTDIR)/P0rn/; done
 	cp $(DOCDIR)/* $(DISTDIR)/$(DOCDIR)
-	tar -c $(DISTDIR) -zvf $(TARGZ)
+	tar -czvf $(TARGZ) $(DISTDIR)
 	rm -rf $(DISTDIR)
