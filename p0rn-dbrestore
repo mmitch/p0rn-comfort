@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dbrestore,v 1.3 2004-11-21 14:44:08 mitch Exp $
+# $Id: p0rn-dbrestore,v 1.4 2005-10-14 18:17:12 mitch Exp $
 #
 # restores the complete p0rn.db
 #
@@ -25,7 +25,7 @@ the p0rn database.
 
 All data is stored in a database.  By default, it is located in
 B<./p0rn.db> (yes, that's the directory from which you're starting
-p0rn-dbrestore).  Is you want to change this, set the environment
+p0rn-dbrestore).  If you want to change this, set the environment
 variable B<P0RNDBLOCATION> (the second letter is a zero) to another
 path and filename.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.9 2004-05-26 08:59:47 mitch Exp $
+# $Id: p0rn-download,v 1.10 2005-10-14 18:15:14 mitch Exp $
 #
 # download selected p0rn
 #
@@ -30,7 +30,7 @@ Downloaded files appear in B<./out>.
 
 All data is stored in a database.  By default, it is located in
 B<./p0rn.db> (yes, that's the directory from which you're starting
-p0rn-download).  Is you want to change this, set the environment
+p0rn-download).  If you want to change this, set the environment
 variable B<P0RNDBLOCATION> (the second letter is a zero) to another
 path and filename.
 
@@ -79,36 +79,33 @@ my $done_something = 1;
 $SIG{CHLD} = 'IGNORE';
 
 my $hash = opendb('downz');
-while ($done_something) {
+    
+my $count = 0;
+	
+while (my $url = each(%{$hash})) {
+
+    $count++;
+    last if $count == 40;
 
     $done_something = 0;
-    
-    foreach my $url (keys %{$hash}) {
+    if ($hash->{$url} == 0) {
 	
-	if ($hash->{$url} == 0) {
-
-	    if (!fork()) {
-		warn "[[ START $url ]]\n";
-		exit if ($hash->{$url});
-		$hash->{$url} = 1;
-
-		system('./p0rn-grab', $url);
-
-		$hash->{$url} = 2;
-		warn "[[ FINISHED $url ]]\n";
-		exit;
-	    }
-
-	    sleep $wait_after_download;
-	    $done_something = 1;
-
+	if (!fork()) {
+	    warn "[[ START $url ]]\n";
+	    exit if ($hash->{$url});
+	    $hash->{$url} = 1;
+	    
+	    system('./p0rn-grab', $url);
+	    
+	    $hash->{$url} = 2;
+	    warn "[[ FINISHED $url ]]\n";
+	    exit;
 	}
-
+	
+	sleep $wait_after_download;
     }
-    sleep $wait_after_cycle;
-
+    
 }
-
 
 wait;
 warn "\n[[ FINISHED. ]]\n\n";

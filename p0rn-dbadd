@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-dbadd,v 1.7 2004-05-26 09:00:57 mitch Exp $
+# $Id: p0rn-dbadd,v 1.8 2005-10-14 18:17:33 mitch Exp $
 #
 # add links to p0rn.db
 #
@@ -41,7 +41,7 @@ URL per line.
 
 All data is stored in a database.  By default, it is located in
 B<./p0rn.db> (yes, that's the directory from which you're starting
-p0rn-add).  Is you want to change this, set the environment variable
+p0rn-add).  If you want to change this, set the environment variable
 B<P0RNDBLOCATION> (the second letter is a zero) to another path and
 filename.
 

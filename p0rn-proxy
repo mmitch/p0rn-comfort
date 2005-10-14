@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.28 2004-12-12 01:02:48 mitch Exp $
+# $Id: p0rn-proxy,v 1.29 2005-10-14 18:17:09 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -132,7 +132,7 @@ and so on and so forth.
 
 All data is stored in a database.  By default, it is located in
 B<./p0rn.db> (yes, that's the directory from which you're starting
-p0rn-proxy).  Is you want to change this, set the environment variable
+p0rn-proxy).  If you want to change this, set the environment variable
 B<P0RNDBLOCATION> (the second letter is a zero) to another path and
 filename.
 
@@ -176,7 +176,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $URLBASE = $Static::PROXY_CTRL_BASE;
 my ($ua, $thumbs, $pics, $downs);
 
