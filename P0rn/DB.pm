@@ -1,4 +1,4 @@
-# $Id: DB.pm,v 1.5 2005-10-28 22:59:19 mitch Exp $
+# $Id: DB.pm,v 1.6 2005-10-28 23:10:13 mitch Exp $
 #
 # DB routines for p0rn-comfort
 #
@@ -6,6 +6,20 @@
 # Licensed under GNU GPL.  See COPYING for details.
 
 use strict;
+use DBI;
+
+sub opendb()
+{
+    return DBI->connect(
+			'DBI:mysql:database=p0rndb;host=localhost;port=3306',
+			'p0rndb',
+			'p0rndb',
+			{'PrintError' => 1,
+			 'PrintWarn' => 1,
+			 'ShowErrorStatement' => 1}
+#		       {'RaiseError' => 1}
+			);
+}
 
 sub geturi($$)
 {
