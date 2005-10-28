@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.29 2005-10-14 18:17:09 mitch Exp $
+# $Id: p0rn-proxy,v 1.30 2005-10-28 22:59:12 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -12,8 +12,9 @@ use HTTP::Daemon;
 use HTTP::Response;
 use HTTP::Status;
 use LWP::UserAgent;
-use P0rn::DB;
 use P0rn::Static;
+use P0rn::DB;
+use DBI;
 
 =head1 NAME
 
@@ -176,12 +177,11 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $URLBASE = $Static::PROXY_CTRL_BASE;
-my ($ua, $thumbs, $pics, $downs);
+my ($ua, $dbh);
 
 my @downs = ( 'queued', 'running', 'finished' );
-my $reload_after = 250; # reread databases after this many requests
 
 ######[ Subroutines ]
 #
@@ -208,46 +208,52 @@ sub execute_proxy_command($)
 	my $urishort = shorten_uri($uri);
 	
 	if ($cmd eq ${Static::PROXY_MARK_THUMB} ) {
-	    $thumbs->{$urishort} = 0;
+	    seturi($dbh, $urishort, 2, -1);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a thumbnail page.";
 	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
 	} elsif ($cmd eq ${Static::PROXY_SINGLE_THUMB} ) {
-	    $thumbs->{$urishort} = 1;
-	    $content .= "<a href=\"$uri\">$urishort</a> (thumbnail) can now be accessed once.";
-	    $response->header(refresh => "1; $uri");
+# TODO: ONCE - not implemented
+#	    $thumbs->{$urishort} = 1;
+#	    $content .= "<a href=\"$uri\">$urishort</a> (thumbnail) can now be accessed once.";
+#	    $response->header(refresh => "1; $uri");
 	    
 	} elsif ($cmd eq ${Static::PROXY_UNMARK_THUMB} ) {
-	    delete $thumbs->{$urishort};
+	    deleteuri($dbh, $urishort);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the thumbnail list.";
 	    
 	} elsif ($cmd eq ${Static::PROXY_MARK_PICTURE} ) {
-	    $pics->{$urishort} = 0;
+	    seturi($dbh, $urishort, 1, -1);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page.";
 	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
 	} elsif ($cmd eq ${Static::PROXY_SINGLE_PICTURE} ) {
-	    $pics->{$urishort} = 1;
-	    $content .= "<a href=\"$uri\">$urishort</a> (picture) can now be accessed once.";
-	    $response->header(refresh => "1; $uri");
+# TODO: ONCE - not implemented
+#	    $pics->{$urishort} = 1;
+#	    $content .= "<a href=\"$uri\">$urishort</a> (picture) can now be accessed once.";
+#	    $response->header(refresh => "1; $uri");
 	    
 	} elsif ($cmd eq ${Static::PROXY_UNMARK_PICTURE} ) {
-	    delete $pics->{$urishort};
+	    deleteuri($dbh, $urishort);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the picture list.";
 	    
 	} elsif ($cmd eq ${Static::PROXY_MARK_DOWNLOAD} ) {
-	    $pics->{$urishort} = 0;
-	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page.<br>";
-	    if (exists $downs->{$urishort}) {
-		$content .= "It already exists in download list (status=$downs[$downs->{$urishort}]).";
+	    my $old = geturi($dbh, $urishort);
+	    if (exists $old->{url}) {
+		if ($old->{status} > 1) {
+		    $content .= "<a href=\"$uri\">$urishort</a> already exists in download list (status=$downs[$old->{status}-1]).";
+		} else {
+		    updateuri($dbh, $urishort, 1, 2);
+		    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page and queued for download.<br>";
+		}
 	    } else {
-		$downs->{$urishort} = 0;
-		$content .= "It has been queued for download.";
+		inserturi($dbh, $urishort, 1, 2);
+		$content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page and queued for download.<br>";
 	    }
 	    $response->header(refresh => '5; url=javascript:window.close()');
 
 	} elsif ($cmd eq ${Static::PROXY_UNMARK_DOWNLOAD} ) {
-	    delete $downs->{$urishort};
+	    deleteuri($dbh, $urishort);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the download list";
 
 	} elsif ($cmd eq ${Static::PROXY_ADMIN} ) {
@@ -262,7 +268,10 @@ sub execute_proxy_command($)
 
 	    $content .= '<h1>thumbnail pages</h1>';
 
-	    foreach my $u (sort keys %{$thumbs}) {
+	    my $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 2 ORDER BY url ASC');
+	    $sth->execute();
+	    while (my $ref = $sth->fetchrow_hashref()) {
+		my $u = $ref->{url};
 		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_THUMB}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
@@ -270,7 +279,10 @@ sub execute_proxy_command($)
 
 	    $content .= '<h1>picture pages</h1>';
 
-	    foreach my $u (sort keys %{$pics}) {
+	    my $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 1 ORDER BY url ASC');
+	    $sth->execute();
+	    while (my $ref = $sth->fetchrow_hashref()) {
+		my $u = $ref->{url};
 		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_PICTURE}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
@@ -279,20 +291,26 @@ sub execute_proxy_command($)
 	    $content .= '<h1>download pages</h1>';
 
 	    $content .= '<h2>queued</h2>';
-	    foreach my $u (sort keys %{$downs}) {
-		next unless $downs->{$u} == 0;
+	    my $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 1 AND status = 2 ORDER BY url ASC');
+	    $sth->execute();
+	    while (my $ref = $sth->fetchrow_hashref()) {
+		my $u = $ref->{url};
 		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_DOWNLOAD}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
 	    $content .= '<h2>running</h2>';
-	    foreach my $u (sort keys %{$downs}) {
-		next unless $downs->{$u} == 1;
+	    $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 1 AND status = 3 ORDER BY url ASC');
+	    $sth->execute();
+	    while (my $ref = $sth->fetchrow_hashref()) {
+		my $u = $ref->{url};
 		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_DOWNLOAD}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
 	    $content .= '<h2>finished</h2>';
-	    foreach my $u (sort keys %{$downs}) {
-		next unless $downs->{$u} == 2;
+	    my $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 1 AND status = 4 ORDER BY url ASC');
+	    $sth->execute();
+	    while (my $ref = $sth->fetchrow_hashref()) {
+		my $u = $ref->{url};
 		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_DOWNLOAD}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
@@ -336,7 +354,10 @@ sub handle_request($)
 	my $urishort = shorten_uri($uri);
 	
 	# check for thumbsites
-	if (exists $thumbs->{$urishort} and ! $thumbs->{$urishort} ) {
+	my $ref = geturi($dbh, $urishort);
+	if (exists $ref->{type} and $ref->{type} == 2) {
+# TODO: ONCE - not implemented
+#	if (exists $thumbs->{$urishort} and ! $thumbs->{$urishort} ) {
 	    
 	    # return error page
 	    my $content = << "EOF";
@@ -354,7 +375,7 @@ EOF
 	} else {
 	    
 	    # check for picsites
-	    if (exists $pics->{$urishort} and ! $pics->{$urishort} ) {
+	    if (exists $ref->{type} and $ref->{type} == 1) {
 		
 		# return error page
 		my $content = << "EOF";
@@ -371,13 +392,15 @@ EOF
 		
 	    } else {
 		
-		if (exists $thumbs->{$uri}) {
-		    $thumbs->{$uri}--;
-		}
+# TODO: ONCE - not implemented
+#		if (exists $thumbs->{$uri}) {
+#		    $thumbs->{$uri}--;
+#		}
 		
-		if (exists $pics->{$uri}) {
-		    $pics->{$uri}--;
-		}
+# TODO: ONCE - not implemented
+#		if (exists $pics->{$uri}) {
+#		    $pics->{$uri}--;
+#		}
 		
 		# do the HTTP request
 		$response = $ua->simple_request($request);
@@ -495,14 +518,6 @@ if ( defined $config->proxy()
     $ua->proxy('http', $config->proxy());
 }
 
-# open dbs
-$thumbs = opendb('thumbz');
-print "- thumbpages db loaded\n";
-$pics = opendb('picz');
-print "- picpages db loaded\n";
-$downs = opendb('downz');
-print "- download db loaded\n";
-
 print "- proxy started on ".$config->addr().":".$config->port()."\n";
 
 # Don't accumulate zombies
@@ -513,6 +528,15 @@ $SIG{CHLD} = 'IGNORE';
 while (my $conn = $proxy->accept) {
     if (! fork()) {
 	# CHILD
+	$dbh = DBI->connect(
+		       'DBI:mysql:database=p0rndb;host=localhost;port=3306',
+		       'p0rndb',
+		       'p0rndb',
+		       {'PrintError' => 1,
+			'PrintWarn' => 1,
+			'ShowErrorStatement' => 1}
+#		       {'RaiseError' => 1}
+		       );
 	while (my $request = $conn->get_request) {
 	    $conn->send_response(handle_request($request));
 	}
