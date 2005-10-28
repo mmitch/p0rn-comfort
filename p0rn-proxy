@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.30 2005-10-28 22:59:12 mitch Exp $
+# $Id: p0rn-proxy,v 1.31 2005-10-28 23:10:03 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -14,7 +14,6 @@ use HTTP::Status;
 use LWP::UserAgent;
 use P0rn::Static;
 use P0rn::DB;
-use DBI;
 
 =head1 NAME
 
@@ -177,7 +176,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $URLBASE = $Static::PROXY_CTRL_BASE;
 my ($ua, $dbh);
 
@@ -528,15 +527,7 @@ $SIG{CHLD} = 'IGNORE';
 while (my $conn = $proxy->accept) {
     if (! fork()) {
 	# CHILD
-	$dbh = DBI->connect(
-		       'DBI:mysql:database=p0rndb;host=localhost;port=3306',
-		       'p0rndb',
-		       'p0rndb',
-		       {'PrintError' => 1,
-			'PrintWarn' => 1,
-			'ShowErrorStatement' => 1}
-#		       {'RaiseError' => 1}
-		       );
+	$dbh = opendb();
 	while (my $request = $conn->get_request) {
 	    $conn->send_response(handle_request($request));
 	}
