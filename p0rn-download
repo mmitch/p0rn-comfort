@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.10 2005-10-14 18:15:14 mitch Exp $
+# $Id: p0rn-download,v 1.11 2005-10-28 23:30:33 mitch Exp $
 #
 # download selected p0rn
 #
@@ -74,37 +74,43 @@ p0rn-download is licensed under the GNU GPL.
 
 my $wait_after_download = 10;
 my $wait_after_cycle    = 30;
-my $done_something = 1;
 
 $SIG{CHLD} = 'IGNORE';
 
-my $hash = opendb('downz');
+my $dbh = opendb();
     
 my $count = 0;
-	
-while (my $url = each(%{$hash})) {
 
-    $count++;
-    last if $count == 40;
+my @urls;
 
-    $done_something = 0;
-    if ($hash->{$url} == 0) {
+my $sth = $dbh->prepare('SELECT * FROM URLs WHERE type = 1 AND status = 2');
+$sth->execute();
+while (my $ref = $sth->fetchrow_hashref()) {
+    push @urls, $ref->{url};
+}
+$dbh->disconnect();
+
+print '' . scalar @urls . " urls to go.\n";
+
+foreach my $url (@urls) {
+    if (!fork()) {
+	my $dbh = opendb();
+	warn "[[ START $url ]]\n";
+	my $ref = geturi($dbh, $url);
+	exit unless exists $ref->{type};
+	exit unless $ref->{type}   == 1;
+	exit unless $ref->{status} == 2;
 	
-	if (!fork()) {
-	    warn "[[ START $url ]]\n";
-	    exit if ($hash->{$url});
-	    $hash->{$url} = 1;
-	    
-	    system('./p0rn-grab', $url);
-	    
-	    $hash->{$url} = 2;
-	    warn "[[ FINISHED $url ]]\n";
-	    exit;
-	}
+	seturi($dbh, $url, 1, 3);
+	system('./p0rn-grab', $url);
 	
-	sleep $wait_after_download;
+	seturi($dbh, $url, 1, 4);
+	warn "[[ FINISHED $url ]]\n";
+	$dbh->disconnect();
+	exit;
     }
     
+    sleep $wait_after_download;
 }
 
 wait;
