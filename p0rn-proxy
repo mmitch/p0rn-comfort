@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.31 2005-10-28 23:10:03 mitch Exp $
+# $Id: p0rn-proxy,v 1.32 2005-10-29 17:46:56 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -176,7 +176,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $URLBASE = $Static::PROXY_CTRL_BASE;
 my ($ua, $dbh);
 
@@ -207,30 +207,28 @@ sub execute_proxy_command($)
 	my $urishort = shorten_uri($uri);
 	
 	if ($cmd eq ${Static::PROXY_MARK_THUMB} ) {
-	    seturi($dbh, $urishort, 2, -1);
+	    seturi($dbh, $urishort, 2);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a thumbnail page.";
 	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
 	} elsif ($cmd eq ${Static::PROXY_SINGLE_THUMB} ) {
-# TODO: ONCE - not implemented
-#	    $thumbs->{$urishort} = 1;
-#	    $content .= "<a href=\"$uri\">$urishort</a> (thumbnail) can now be accessed once.";
-#	    $response->header(refresh => "1; $uri");
+	    seturi($dbh, $urishort, 2, -1, 1);
+	    $content .= "<a href=\"$uri\">$urishort</a> (thumbnail) can now be accessed once.";
+	    $response->header(refresh => "1; $uri");
 	    
 	} elsif ($cmd eq ${Static::PROXY_UNMARK_THUMB} ) {
 	    deleteuri($dbh, $urishort);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the thumbnail list.";
 	    
 	} elsif ($cmd eq ${Static::PROXY_MARK_PICTURE} ) {
-	    seturi($dbh, $urishort, 1, -1);
+	    seturi($dbh, $urishort, 1);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page.";
 	    $response->header(refresh => '5; url=javascript:window.close()');
 	    
 	} elsif ($cmd eq ${Static::PROXY_SINGLE_PICTURE} ) {
-# TODO: ONCE - not implemented
-#	    $pics->{$urishort} = 1;
-#	    $content .= "<a href=\"$uri\">$urishort</a> (picture) can now be accessed once.";
-#	    $response->header(refresh => "1; $uri");
+	    seturi($dbh, $urishort, 1, -1, 1);
+	    $content .= "<a href=\"$uri\">$urishort</a> (picture) can now be accessed once.";
+	    $response->header(refresh => "1; $uri");
 	    
 	} elsif ($cmd eq ${Static::PROXY_UNMARK_PICTURE} ) {
 	    deleteuri($dbh, $urishort);
@@ -242,11 +240,11 @@ sub execute_proxy_command($)
 		if ($old->{status} > 1) {
 		    $content .= "<a href=\"$uri\">$urishort</a> already exists in download list (status=$downs[$old->{status}-1]).";
 		} else {
-		    updateuri($dbh, $urishort, 1, 2);
+		    updateuri($dbh, $urishort, 1, 2, 0);
 		    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page and queued for download.<br>";
 		}
 	    } else {
-		inserturi($dbh, $urishort, 1, 2);
+		inserturi($dbh, $urishort, 1, 2, 0);
 		$content .= "<a href=\"$uri\">$urishort</a> has been marked as a picture page and queued for download.<br>";
 	    }
 	    $response->header(refresh => '5; url=javascript:window.close()');
@@ -354,9 +352,7 @@ sub handle_request($)
 	
 	# check for thumbsites
 	my $ref = geturi($dbh, $urishort);
-	if (exists $ref->{type} and $ref->{type} == 2) {
-# TODO: ONCE - not implemented
-#	if (exists $thumbs->{$urishort} and ! $thumbs->{$urishort} ) {
+	if (exists $ref->{type} and $ref->{type} == 2 and $ref->{visits} == 0) {
 	    
 	    # return error page
 	    my $content = << "EOF";
@@ -374,7 +370,7 @@ EOF
 	} else {
 	    
 	    # check for picsites
-	    if (exists $ref->{type} and $ref->{type} == 1) {
+	    if (exists $ref->{type} and $ref->{type} == 1 and $ref->{visits} == 0) {
 		
 		# return error page
 		my $content = << "EOF";
@@ -391,15 +387,10 @@ EOF
 		
 	    } else {
 		
-# TODO: ONCE - not implemented
-#		if (exists $thumbs->{$uri}) {
-#		    $thumbs->{$uri}--;
-#		}
-		
-# TODO: ONCE - not implemented
-#		if (exists $pics->{$uri}) {
-#		    $pics->{$uri}--;
-#		}
+		if (exists $ref->{visits} and $ref->{visits} > 0) {
+		    $ref->{visits}--;
+		    updateuri($dbh, $ref->{url}, $ref->{type}, $ref->{status}, $ref->{visits});
+		}
 		
 		# do the HTTP request
 		$response = $ua->simple_request($request);
