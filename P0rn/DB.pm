@@ -1,4 +1,4 @@
-# $Id: DB.pm,v 1.7 2005-10-29 17:40:11 mitch Exp $
+# $Id: DB.pm,v 1.8 2005-10-29 17:41:00 mitch Exp $
 #
 # DB routines for p0rn-comfort
 #
@@ -77,6 +77,7 @@ sub seturi($$@)
 	updateuri($dbh, $url, $type, $status, $visits);
     } else {
 	$status = 1 if $status == -1;
+	$visits = 0 if $visits == -1;
 	inserturi($dbh, $url, $type, $status, $visits);
     }
 }
