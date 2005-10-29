@@ -1,4 +1,4 @@
-# $Id: DB.pm,v 1.6 2005-10-28 23:10:13 mitch Exp $
+# $Id: DB.pm,v 1.7 2005-10-29 17:40:11 mitch Exp $
 #
 # DB routines for p0rn-comfort
 #
@@ -48,33 +48,36 @@ sub getdate()
     return sprintf("%04d-%02d-%02d", 1900+$year, $mon+1, $mday);
 }
 
-sub inserturi($$$$)
+sub inserturi($$$$$)
 {
-    my ($dbh, $url, $type, $status) = @_;
+    my ($dbh, $url, $type, $status, $visits) = @_;
     my $date = getdate();
-    my $cmd = sprintf('INSERT INTO URLs VALUES (%s, %s, %s, %s, %s)', $dbh->quote($url), $dbh->quote($date), $dbh->quote($date), $status, $type);
+    my $cmd = sprintf('INSERT INTO URLs VALUES (%s, %s, %s, %s, %s, %s)', $dbh->quote($url), $dbh->quote($date), $dbh->quote($date), $status, $type, $visits);
     $dbh->do($cmd);
 }
 
-sub updateuri($$$$)
+sub updateuri($$$$$)
 {
-    my ($dbh, $url, $type, $status) = @_;
+    my ($dbh, $url, $type, $status, $visits) = @_;
     my $date = getdate();
-    my $cmd = sprintf('UPDATE URLs SET changed = %s, status = %s, type = %s WHERE url = %s', $dbh->quote($date), $status, $type, $dbh->quote($url));
+    my $cmd = sprintf('UPDATE URLs SET changed = %s, status = %s, type = %s, visits = %s WHERE url = %s', $dbh->quote($date), $status, $type, $visits, $dbh->quote($url));
     $dbh->do($cmd);
 }
 
-sub seturi($$$$)
+sub seturi($$@)
 {
-    my ($dbh, $url, $type, $status) = @_;
+    my ($dbh, $url, $type, $status, $visits) = @_;
+    $type   = -1 unless defined $type;
+    $status = -1 unless defined $status;
+    $visits = -1 unless defined $visits;
     my $old = geturi($dbh, $url);
     if (exists $old->{url}) {
 	$type   = $old->{type}   if $type   == -1;
 	$status = $old->{status} if $status == -1;
-	updateuri($dbh, $url, $type, $status);
+	updateuri($dbh, $url, $type, $status, $visits);
     } else {
 	$status = 1 if $status == -1;
-	inserturi($dbh, $url, $type, $status);
+	inserturi($dbh, $url, $type, $status, $visits);
     }
 }
 
