@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.12 2004-11-20 21:04:16 mitch Exp $
+# $Id: p0rn-bot,v 1.13 2005-10-29 18:44:57 mitch Exp $
 #
 # automatically register pages with p0rn-proxy
 #
@@ -10,8 +10,9 @@ use strict;
 use AppConfig qw(:expand);
 use HTML::Parser;
 use LWP::UserAgent;
-use P0rn::Static;
 use URI;
+use P0rn::DB;
+use P0rn::Static;
 
 =head1 NAME
 
@@ -113,12 +114,13 @@ p0rn-bot is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my ($status, $base, $ua, $parser);
 my @pics;
 my @pages;
 my @todo;
 my ($count_pic, $count_thumb, $count_empty) = (0, 0, 0);
+my $dbh;
 
 ######[ Subroutines ]
 #
@@ -129,22 +131,16 @@ sub debug(@)
     warn "@_\n";
 }
 
-sub mark_down($)
+sub mark_for_download($)
 # add link to download list
 {
-    $ua->get("${Static::PROXY_CTRL_BASE}/${Static::PROXY_MARK_DOWNLOAD}/$_[0]");
+    seturi($dbh, shift, 1, 2);
 }
 
-sub mark_thumb($)
+sub mark_as_processed_thumbnail($)
 # add link to thumbnail list
 {
-    $ua->get("${Static::PROXY_CTRL_BASE}/${Static::PROXY_MARK_THUMB}/$_[0]");
-}
-
-sub unmark_thumb($)
-# remove link from thumbnail list
-{
-    $ua->get("${Static::PROXY_CTRL_BASE}/${Static::PROXY_UNMARK_THUMB}/$_[0]");
+    seturi($dbh, shift, 2, 4);
 }
 
 sub start_handler
@@ -157,9 +153,8 @@ sub start_handler
     return unless defined $link;
     $link =~ s/\#.*$//;
     return if $link eq $base;
-    return if $link =~ m,^$Static::PROXY_CTRL_BASE,;
-    return if $link =~ /^javascript:/;
-    return if $link =~ /^mailto:/;
+    return if $link =~ /^javascript:/i;
+    return if $link =~ /^mailto:/i;
     return if $link =~ /^\s*$/;
     
     $link = URI->new_abs($link, $base)->as_string;
@@ -185,66 +180,58 @@ sub parse_page($$)
 
     if (@pics + @pages > 0) {
 	if (@pics > @pages) {
-	    $status .= 'PICTURE';
-	    mark_down($base);
+	    $status .= ${Static::GREEN}.'PICTURE';
+	    mark_for_download($base);
 	    $count_pic++;
 	} else {
-	    $status .= 'thumbnail';
-	    mark_thumb($base);
+	    $status .= ${Static::YELLOW}.'thumbnail';
+	    mark_as_processed_thumbnail($base);
 	    push @{$urls}, (@pages);
 	    $count_thumb++;
 	}
     } else {
-	$status .= "empty";
+	$status .= ${Static::CYAN}."empty";
 	$count_empty++;
     }
+    $status .= ${Static::NORMAL};
 }
 
-sub check_url($$);
-sub check_url($$)
+sub check_url($)
 # fetch an HTML page and process it
 {
-    my ($url, $recurse) = @_;
+    my $url = shift;
     my @urls;
 
     return unless defined $url;
-    $recurse = 0 unless defined $recurse;
     
-    $status = sprintf "[%02d] ", $recurse;
+    # mark as 'in progress'
+    seturi($dbh, $url, -1, 3);
+
+    $status="";
+
     my $response = $ua->get($url);
     
     if ($response->is_success) {
 	parse_page( $response, \@urls );
     } else {
-	$status .= "$url failed " . $response->code;
+	$status .= "$url ${Static::CYAN}failed " . $response->code . ${Static::NORMAL};
+	# mark as finished
+	seturi($dbh, $url, -1, 4);
     }
     
     debug $status;
 
-    if ($recurse) {
-	# dedupe
-	my %urls = map { $_ => 0 } @urls;
-	foreach $url (keys %urls) {
-	    push @todo, [$url, $recurse - 1];
+    # dedupe
+    my %urls = map { $_ => 0 } @urls;
+    foreach $url (keys %urls) {
+	# is it already listed?
+	my $ref = geturi($dbh, $url);
+	if (not exists $ref->{url}) {
+	    # new entry type "unkown"
+	    inserturi($dbh, $url, 3, 2, 0);
 	}
     }
-}
 
-sub check_proxy($)
-# check for a running p0rn-proxy
-{
-    my $response = $ua->get("${Static::PROXY_CTRL_BASE}/${Static::PROXY_GET_VERSION}/_nouri_");
-    if ($response->is_success) {
-	foreach (split /\n/, $response->content) {
-	    if ( /^VERSION: (.*)$/) {
-		print "found p0rn-proxy $1\n";
-		last;
-	    }
-	}
-    } else {
-	print "no p0rn-proxy found at '$_[0]'\n";
-	exit 1;
-    }
 }
 
 sub print_usage()
@@ -271,13 +258,12 @@ print "this is p0rn-bot ${Static::VERSION}/${CVSVERSION}\n";
 # define configuration options
 my $config = AppConfig->new( { CASE => 1 } );
 $config->define( 'depth|d=s',         { DEFAULT => '2' } );
-$config->define( 'proxy|P=s',         { DEFAULT => 'http://localhost:8080' } );
+$config->define( 'proxy|P=s',         { DEFAULT => $ENV{'HTTP_PROXY'}, EXPAND => EXPAND_ENV } );
 $config->define( 'version|V!' );
 $config->define( 'help|h!' );
 
 # override configuration with command line arguments
 $config->getopt( qw(no_ignore_case), [ @ARGV ] );
-my $starturl = shift;
 
 # if we are to just print the version number, then quit now
 exit if $config->version();
@@ -289,28 +275,54 @@ print_usage() if $config->help();
 $ua = LWP::UserAgent->new;
 $ua->agent("p0rn-bot ${Static::VERSION}/${CVSVERSION}");
 $ua->timeout(10);
-$ua->proxy('http', $config->proxy());
+if ( defined $config->proxy()
+     and $config->proxy() ne ""
+     and $config->proxy() ne "none" ) {
+    print "- using existing proxy on ".$config->proxy()."\n";
+    $ua->proxy('http', $config->proxy());
+}
 
-# check settings
-check_proxy($config->proxy());
-die "no url given\n" unless (defined $starturl and $starturl ne '');
+
+# open database
+$dbh = opendb();
 
 # create HTML Parser
 $parser = HTML::Parser->new(api_version => 3);
 $parser->handler( start => \&start_handler, "tagname,attr");
 
-# unhide start URL
-unmark_thumb($starturl);
-
-# go
 my $count = 0;
-push @todo, [$starturl, $config->depth()];
-while (@todo) {
+
+my @sorts = (
+	     'ORDER BY length(url) ASC',
+	     'ORDER BY length(url) DESC',
+	     'ORDER BY url ASC',
+	     'ORDER BY url DESC',
+	     'ORDER BY added ASC',
+	     'ORDER BY added DESC'
+	     );
+
+# endless loop!  yahoo!
+while (1) {
     $count ++;
-    my ($url, $depth) = @{shift @todo};
-    check_url($url, $depth);
-    print "(done/queued $count/".scalar @todo.")\n" unless $count % 25;
+
+    # find random unkown site
+    my $ref = $dbh->selectrow_hashref('SELECT url FROM URLs WHERE type = 3 AND status = 2 '. $sorts[$count % @sorts]);
+    
+    if (! exists $ref->{url}) {
+	# none found? try a known thumbnail site instead
+	$ref = $dbh->selectrow_hashref('SELECT url FROM URLs WHERE type = 2 AND status = 1 '. $sorts[$count % @sorts]);
+    }
+    last unless exists $ref->{url};
+
+    # work on it
+    check_url($ref->{url});
+
+    unless ($count % 50) {
+	$dbh->disconnect();
+	print "($count done: pic/thumb/empty = ${count_pic}/${count_thumb}/${count_empty})\n";
+	$dbh=opendb();
+    }
 }
 
-# finished
 print "finished.  pic/thumb/empty: ${count_pic}/${count_thumb}/${count_empty}\n";
+print "no more pages to crawl.  feed me!\n";
