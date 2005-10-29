@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.13 2005-10-29 18:44:57 mitch Exp $
+# $Id: p0rn-bot,v 1.14 2005-10-29 18:49:50 mitch Exp $
 #
 # automatically register pages with p0rn-proxy
 #
@@ -114,7 +114,7 @@ p0rn-bot is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my ($status, $base, $ua, $parser);
 my @pics;
 my @pages;
@@ -153,6 +153,7 @@ sub start_handler
     return unless defined $link;
     $link =~ s/\#.*$//;
     return if $link eq $base;
+    return if $link =~ m,^$Static::PROXY_CTRL_BASE,;
     return if $link =~ /^javascript:/i;
     return if $link =~ /^mailto:/i;
     return if $link =~ /^\s*$/;
@@ -176,7 +177,7 @@ sub parse_page($$)
     @pages = ();
     $parser->parse($response->content);
 
-    $status .= $base . ' ' . @pics . '/' . @pages . ' ';
+    $status .= $base . ' ' . ${Static::BLUE} . @pics . '/' . @pages . ' ';
 
     if (@pics + @pages > 0) {
 	if (@pics > @pages) {
@@ -319,7 +320,7 @@ while (1) {
 
     unless ($count % 50) {
 	$dbh->disconnect();
-	print "($count done: pic/thumb/empty = ${count_pic}/${count_thumb}/${count_empty})\n";
+	print "${Static::RED}($count done: pic/thumb/empty = ${count_pic}/${count_thumb}/${count_empty})${Static::NORMAL}\n";
 	$dbh=opendb();
     }
 }
