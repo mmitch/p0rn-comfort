@@ -1,4 +1,4 @@
-# $Id: Static.pm,v 1.6 2005-10-29 18:43:13 mitch Exp $
+# $Id: Static.pm,v 1.7 2005-10-29 18:47:30 mitch Exp $
 #
 # global variables for p0rn-comfort
 #
@@ -27,7 +27,8 @@ our $VERSION = "0.0.5-dev-mysql-experimental";
 
 our $CYAN="\033[36m";
 our $GREEN="\033[32m";
-our $YELLOW="\033[34m";
+our $BLUE="\033[34m";
+our $YELLOW="\033[33m";
 our $VIOLET="\033[35m";
 our $RED="\033[31m";
 our $NORMAL="\033[m";
