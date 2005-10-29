@@ -1,4 +1,4 @@
-# $Id: Static.pm,v 1.4 2005-10-29 18:30:44 mitch Exp $
+# $Id: Static.pm,v 1.5 2005-10-29 18:41:05 mitch Exp $
 #
 # global variables for p0rn-comfort
 #
@@ -24,5 +24,13 @@ our $PROXY_UNMARK_DOWNLOAD = 'unmark_as_download';
 our $PROXY_UNMARK_PICTURE = 'unmark_as_pic';
 our $PROXY_UNMARK_THUMB = 'unmark_as_thumb';
 our $VERSION = "0.0.5-dev-mysql-experimental";
+
+our $CYAN="\033[36m"
+our $GREEN="\033[32m"
+our $YELLOW="\033[34m"
+our $VIOLET="\033[35m"
+our $RED="\033[31m"
+our $NORMAL="\033[m"
+
 
 1;
