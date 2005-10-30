@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-download,v 1.11 2005-10-28 23:30:33 mitch Exp $
+# $Id: p0rn-download,v 1.12 2005-10-30 18:19:57 mitch Exp $
 #
 # download selected p0rn
 #
@@ -8,6 +8,7 @@
 
 use strict;
 use P0rn::DB;
+use P0rn::Static;
 
 =head1 NAME
 
@@ -73,9 +74,11 @@ p0rn-download is licensed under the GNU GPL.
 =cut
 
 my $wait_after_download = 10;
-my $wait_after_cycle    = 30;
+my $wait_for_finish     = 30;
+my $quit = 0;
 
 $SIG{CHLD} = 'IGNORE';
+$SIG{HUP} = sub { $quit++ };
 
 my $dbh = opendb();
     
@@ -95,7 +98,7 @@ print '' . scalar @urls . " urls to go.\n";
 foreach my $url (@urls) {
     if (!fork()) {
 	my $dbh = opendb();
-	warn "[[ START $url ]]\n";
+	warn "${Static::YELLOW}[[ START $url ]]${Static::NORMAL}\n";
 	my $ref = geturi($dbh, $url);
 	exit unless exists $ref->{type};
 	exit unless $ref->{type}   == 1;
@@ -105,13 +108,25 @@ foreach my $url (@urls) {
 	system('./p0rn-grab', $url);
 	
 	seturi($dbh, $url, 1, 4);
-	warn "[[ FINISHED $url ]]\n";
+	warn "${Static::GREEN}[[ FINISHED $url ]]${Static::NORMAL}\n";
 	$dbh->disconnect();
 	exit;
     }
     
+    last if $quit;
     sleep $wait_after_download;
+    last if $quit;
+
+    # maximum 12 connections
+    while (`ps aux | grep [p]0rn-grab | wc -l` > 24) {
+	sleep $wait_for_finish;
+        last if $quit;
+    }
+
+    last if $quit;
+
 }
+warn "\n${Static::RED}[[ WAITING FOR CHILD PROCESSES. ]]${Static::NORMAL}\n\n";
 
 wait;
-warn "\n[[ FINISHED. ]]\n\n";
+warn "\n${Static::RED}[[ FINISHED. ]]${Static::NORMAL}\n\n";
