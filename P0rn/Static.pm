@@ -1,4 +1,4 @@
-# $Id: Static.pm,v 1.7 2005-10-29 18:47:30 mitch Exp $
+# $Id: Static.pm,v 1.8 2005-10-30 18:18:32 mitch Exp $
 #
 # global variables for p0rn-comfort
 #
@@ -12,11 +12,13 @@ package Static;
 our $PROXY_ADMIN = 'admin';
 our $PROXY_CTRL_BASE = 'http://www.cgarbs.de/PROXYCONTROL';
 our $PROXY_GET_VERSION = 'get_version';
-our $PROXY_LIST_DOWNLOAD = 'list_pics';
-our $PROXY_LIST_PICTURE = 'list_downs';
+our $PROXY_LIST_PIC_DOWN = 'list_picdown';
+our $PROXY_LIST_PICTURE = 'list_pics';
+our $PROXY_LIST_THUMB_DOWN = 'list_thumbdown';
 our $PROXY_LIST_THUMB = 'list_thumbs';
-our $PROXY_MARK_DOWNLOAD= 'mark_as_download';
+our $PROXY_MARK_PIC_DOWN= 'mark_as_picdown';
 our $PROXY_MARK_PICTURE = 'mark_as_pic';
+our $PROXY_MARK_THUMB_DOWN = 'mark_as_thumbdown';
 our $PROXY_MARK_THUMB = 'mark_as_thumb';
 our $PROXY_SINGLE_PICTURE = 'single_pic';
 our $PROXY_SINGLE_THUMB = 'single_thumb';
