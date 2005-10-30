@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.14 2005-10-29 18:49:50 mitch Exp $
+# $Id: p0rn-bot,v 1.15 2005-10-30 13:30:57 mitch Exp $
 #
 # automatically register pages with p0rn-proxy
 #
@@ -114,7 +114,7 @@ p0rn-bot is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my ($status, $base, $ua, $parser);
 my @pics;
 my @pages;
@@ -154,8 +154,7 @@ sub start_handler
     $link =~ s/\#.*$//;
     return if $link eq $base;
     return if $link =~ m,^$Static::PROXY_CTRL_BASE,;
-    return if $link =~ /^javascript:/i;
-    return if $link =~ /^mailto:/i;
+    return if $link =~ /^(mailto|ed2k|ftp|news|telnet|javascript):/i;
     return if $link =~ /^\s*$/;
     
     $link = URI->new_abs($link, $base)->as_string;
@@ -213,7 +212,14 @@ sub check_url($)
     my $response = $ua->get($url);
     
     if ($response->is_success) {
-	parse_page( $response, \@urls );
+
+        # check for redirects
+        if ($response->base ne $url) {
+            @urls = $response->base;
+            $status .= "$url ${Static::VIOLET}redirect${Static::NORMAL}";
+        } else {
+            parse_page( $response, \@urls );
+        }
     } else {
 	$status .= "$url ${Static::CYAN}failed " . $response->code . ${Static::NORMAL};
 	# mark as finished
@@ -294,12 +300,12 @@ $parser->handler( start => \&start_handler, "tagname,attr");
 my $count = 0;
 
 my @sorts = (
-	     'ORDER BY length(url) ASC',
-	     'ORDER BY length(url) DESC',
-	     'ORDER BY url ASC',
-	     'ORDER BY url DESC',
-	     'ORDER BY added ASC',
-	     'ORDER BY added DESC'
+	     'ORDER BY length(url) ASC LIMIT 1',
+	     'AND length(url) < 100 ORDER BY length(url) DESC LIMIT 1',
+	     'ORDER BY url ASC LIMIT 1',
+	     'ORDER BY url DESC LIMIT 1',
+	     'ORDER BY added ASC LIMIT 1',
+	     'ORDER BY added DESC LIMIT 1'
 	     );
 
 # endless loop!  yahoo!
@@ -312,6 +318,7 @@ while (1) {
     if (! exists $ref->{url}) {
 	# none found? try a known thumbnail site instead
 	$ref = $dbh->selectrow_hashref('SELECT url FROM URLs WHERE type = 2 AND status = 1 '. $sorts[$count % @sorts]);
+    } else {
     }
     last unless exists $ref->{url};
 
