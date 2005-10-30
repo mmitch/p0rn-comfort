@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.15 2005-10-30 13:30:57 mitch Exp $
+# $Id: p0rn-bot,v 1.16 2005-10-30 14:17:35 mitch Exp $
 #
 # automatically register pages with p0rn-proxy
 #
@@ -114,7 +114,7 @@ p0rn-bot is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my ($status, $base, $ua, $parser);
 my @pics;
 my @pages;
@@ -129,18 +129,6 @@ sub debug(@)
 # print debugging message
 {
     warn "@_\n";
-}
-
-sub mark_for_download($)
-# add link to download list
-{
-    seturi($dbh, shift, 1, 2);
-}
-
-sub mark_as_processed_thumbnail($)
-# add link to thumbnail list
-{
-    seturi($dbh, shift, 2, 4);
 }
 
 sub start_handler
@@ -181,25 +169,27 @@ sub parse_page($$)
     if (@pics + @pages > 0) {
 	if (@pics > @pages) {
 	    $status .= ${Static::GREEN}.'PICTURE';
-	    mark_for_download($base);
+	    seturi($dbh, $base, 1, 2);
 	    $count_pic++;
 	} else {
 	    $status .= ${Static::YELLOW}.'thumbnail';
-	    mark_as_processed_thumbnail($base);
+	    seturi($dbh, $base, 2, 4);
 	    push @{$urls}, (@pages);
 	    $count_thumb++;
 	}
     } else {
 	$status .= ${Static::CYAN}."empty";
+	seturi($dbh, shift, -1, 4);
 	$count_empty++;
     }
     $status .= ${Static::NORMAL};
 }
 
-sub check_url($)
+sub check_url($$);
+sub check_url($$)
 # fetch an HTML page and process it
 {
-    my $url = shift;
+    my ($url, $depth) = @_;
     my @urls;
 
     return unless defined $url;
@@ -207,7 +197,8 @@ sub check_url($)
     # mark as 'in progress'
     seturi($dbh, $url, -1, 3);
 
-    $status="";
+    $depth--;
+    $status = sprintf '[%02d] ', $depth;
 
     my $response = $ua->get($url);
     
@@ -216,6 +207,8 @@ sub check_url($)
         # check for redirects
         if ($response->base ne $url) {
             @urls = $response->base;
+	    $depth++;
+	    seturi($dbh, $url, -1, 4);
             $status .= "$url ${Static::VIOLET}redirect${Static::NORMAL}";
         } else {
             parse_page( $response, \@urls );
@@ -228,14 +221,24 @@ sub check_url($)
     
     debug $status;
 
-    # dedupe
-    my %urls = map { $_ => 0 } @urls;
-    foreach $url (keys %urls) {
-	# is it already listed?
-	my $ref = geturi($dbh, $url);
-	if (not exists $ref->{url}) {
-	    # new entry type "unkown"
-	    inserturi($dbh, $url, 3, 2, 0);
+
+    # recursion?
+    if ($depth) {
+
+	# dedupe
+	my %urls = map { $_ => 0 } @urls;
+
+	foreach $url (keys %urls) {
+	    # is it already listed?
+	    my $ref = geturi($dbh, $url);
+
+	    # fetch this page if
+	    # a) unknown
+	    # b) thumbnail site < queued
+	    if ((not exists $ref->{type}) or 
+		($ref->{type} == 2 and $ref->{status} == 1)) {
+		check_url($url, $depth);
+	    }
 	}
     }
 
@@ -300,30 +303,25 @@ $parser->handler( start => \&start_handler, "tagname,attr");
 my $count = 0;
 
 my @sorts = (
-	     'ORDER BY length(url) ASC LIMIT 1',
-	     'AND length(url) < 100 ORDER BY length(url) DESC LIMIT 1',
-	     'ORDER BY url ASC LIMIT 1',
-	     'ORDER BY url DESC LIMIT 1',
-	     'ORDER BY added ASC LIMIT 1',
-	     'ORDER BY added DESC LIMIT 1'
+	     '',
+	     'ORDER BY length(url) ASC',
+	     'AND length(url) < 100 ORDER BY length(url) DESC',
+	     'ORDER BY url ASC',
+	     'ORDER BY url DESC',
+	     'ORDER BY added ASC',
+	     'ORDER BY added DESC'
 	     );
 
 # endless loop!  yahoo!
 while (1) {
     $count ++;
 
-    # find random unkown site
-    my $ref = $dbh->selectrow_hashref('SELECT url FROM URLs WHERE type = 3 AND status = 2 '. $sorts[$count % @sorts]);
-    
-    if (! exists $ref->{url}) {
-	# none found? try a known thumbnail site instead
-	$ref = $dbh->selectrow_hashref('SELECT url FROM URLs WHERE type = 2 AND status = 1 '. $sorts[$count % @sorts]);
-    } else {
-    }
+    # find queued thumbnail page
+    my $ref = $dbh->selectrow_hashref('SELECT url FROM URLs WHERE type = 2 AND status = 2 '. $sorts[$count % @sorts] . ' LIMIT 1');
     last unless exists $ref->{url};
 
     # work on it
-    check_url($ref->{url});
+    check_url($ref->{url}, $config->depth());
 
     unless ($count % 50) {
 	$dbh->disconnect();
