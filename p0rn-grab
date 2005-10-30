@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: p0rn-grab,v 1.3 2004-05-14 20:53:04 mitch Exp $
+# $Id: p0rn-grab,v 1.4 2005-10-30 18:18:10 mitch Exp $
 #
 # download all images/videos from a given URL
 #
@@ -23,8 +23,10 @@ cd $SAVETMP
 
 NR=0
 
+#| egrep -i '^ *[0-9]+\. http://.*(jpg|jpeg|mpg|mpeg|avi|png|wmv)$' \
+
 lynx --dump $URL \
-| egrep -i '^ *[0-9]+\. http://.*(jpg|jpeg|mpg|mpeg|avi|png|wmv)$' \
+| egrep -i '^ *[0-9]+\. http://.*(jpg|jpeg|png)$' \
 | sed 's/^.*http:/http:/' \
 | tac \
 | while read FILE; do
