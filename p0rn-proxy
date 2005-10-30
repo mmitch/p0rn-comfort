@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.32 2005-10-29 17:46:56 mitch Exp $
+# $Id: p0rn-proxy,v 1.33 2005-10-30 13:50:06 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -108,7 +108,7 @@ original proxy.
 
 Set this to 'none' to use no proxy at all.
 
-Default is to use the environment variable ${http_proxy}.
+Default is to use the environment variable ${HTTP_PROXY}.
 
 =item B<--version> | B<-V>
 
@@ -176,11 +176,11 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $URLBASE = $Static::PROXY_CTRL_BASE;
 my ($ua, $dbh);
 
-my @downs = ( 'queued', 'running', 'finished' );
+my @downs = ( 'new', 'queued', 'running', 'finished' );
 
 ######[ Subroutines ]
 #
@@ -234,10 +234,10 @@ sub execute_proxy_command($)
 	    deleteuri($dbh, $urishort);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the picture list.";
 	    
-	} elsif ($cmd eq ${Static::PROXY_MARK_DOWNLOAD} ) {
+	} elsif ($cmd eq ${Static::PROXY_MARK_PIC_DOWN} ) {
 	    my $old = geturi($dbh, $urishort);
 	    if (exists $old->{url}) {
-		if ($old->{status} > 1) {
+		if ($old->{status} > 1 and $old->{type} == 1) {
 		    $content .= "<a href=\"$uri\">$urishort</a> already exists in download list (status=$downs[$old->{status}-1]).";
 		} else {
 		    updateuri($dbh, $urishort, 1, 2, 0);
@@ -249,16 +249,32 @@ sub execute_proxy_command($)
 	    }
 	    $response->header(refresh => '5; url=javascript:window.close()');
 
+	} elsif ($cmd eq ${Static::PROXY_MARK_THUMB_DOWN} ) {
+	    my $old = geturi($dbh, $urishort);
+	    if (exists $old->{url}) {
+		if ($old->{status} > 1 and $old->{type} == 2) {
+		    $content .= "<a href=\"$uri\">$urishort</a> already exists in download list (status=$downs[$old->{status}-1]).";
+		} else {
+		    updateuri($dbh, $urishort, 2, 2, 0);
+		    $content .= "<a href=\"$uri\">$urishort</a> has been marked as a thumbnail page and queued for download.<br>";
+		}
+	    } else {
+		inserturi($dbh, $urishort, 2, 2, 0);
+		$content .= "<a href=\"$uri\">$urishort</a> has been marked as a thumbnail page and queued for download.<br>";
+	    }
+	    $response->header(refresh => '5; url=javascript:window.close()');
+
 	} elsif ($cmd eq ${Static::PROXY_UNMARK_DOWNLOAD} ) {
-	    deleteuri($dbh, $urishort);
+	    seturi($dbh, $urishort, -1, 1);
 	    $content .= "<a href=\"$uri\">$urishort</a> has been removed from the download list";
 
 	} elsif ($cmd eq ${Static::PROXY_ADMIN} ) {
 
 	    $content .= '<h1>p0rn-proxy main menu</h1><ul><ul><ul>' .
 		"<li><a href=\"$URLBASE/${Static::PROXY_LIST_THUMB}/_nouri_\">list thumbnail pages</a></li>" .
+		"<li><a href=\"$URLBASE/${Static::PROXY_LIST_THUMB_DOWN}/_nouri_\">list thumbnail downloads</a></li>" .
 		"<li><a href=\"$URLBASE/${Static::PROXY_LIST_PICTURE}/_nouri_\">list picture pages</a></li>" .
-		"<li><a href=\"$URLBASE/${Static::PROXY_LIST_DOWNLOAD}/_nouri_\">list download pages</a></li>" .
+		"<li><a href=\"$URLBASE/${Static::PROXY_LIST_PIC_DOWN}/_nouri_\">list picture downloads</a></li>" .
 		"</ul></ul><hr>p0rn-proxy ${Static::VERSION}/$CVSVERSION</ul>";
 	    
 	} elsif ($cmd eq ${Static::PROXY_LIST_THUMB} ) {
@@ -283,9 +299,9 @@ sub execute_proxy_command($)
 		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_PICTURE}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
 	    }
 
-	} elsif ($cmd eq ${Static::PROXY_LIST_DOWNLOAD} ) {
+	} elsif ($cmd eq ${Static::PROXY_LIST_PIC_DOWN} ) {
 
-	    $content .= '<h1>download pages</h1>';
+	    $content .= '<h1>download picture pages</h1>';
 
 	    $content .= '<h2>queued</h2>';
 	    my $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 1 AND status = 2 ORDER BY url ASC');
@@ -305,6 +321,34 @@ sub execute_proxy_command($)
 
 	    $content .= '<h2>finished</h2>';
 	    my $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 1 AND status = 4 ORDER BY url ASC');
+	    $sth->execute();
+	    while (my $ref = $sth->fetchrow_hashref()) {
+		my $u = $ref->{url};
+		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_DOWNLOAD}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+	    }
+
+	} elsif ($cmd eq ${Static::PROXY_LIST_THUMB_DOWN} ) {
+
+	    $content .= '<h1>download thumbnail pages</h1>';
+
+	    $content .= '<h2>queued</h2>';
+	    my $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 2 AND status = 2 ORDER BY url ASC');
+	    $sth->execute();
+	    while (my $ref = $sth->fetchrow_hashref()) {
+		my $u = $ref->{url};
+		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_DOWNLOAD}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+	    }
+
+	    $content .= '<h2>running</h2>';
+	    $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 2 AND status = 3 ORDER BY url ASC');
+	    $sth->execute();
+	    while (my $ref = $sth->fetchrow_hashref()) {
+		my $u = $ref->{url};
+		$content .= "[<a href=\"$URLBASE/${Static::PROXY_UNMARK_DOWNLOAD}/$u\">del</a>] <a href=\"$u\">$u</a><br>";
+	    }
+
+	    $content .= '<h2>finished</h2>';
+	    my $sth = $dbh->prepare('SELECT url FROM URLs WHERE type = 2 AND status = 4 ORDER BY url ASC');
 	    $sth->execute();
 	    while (my $ref = $sth->fetchrow_hashref()) {
 		my $u = $ref->{url};
@@ -402,10 +446,11 @@ EOF
 		    my $content = $response->content();
 		    
 		    my $linkline = '<p align="center">' .
-			'[ th: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_THUMB}/$uri".'">mark as thumbnail page</a> ' .
+			'[ td: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_THUMB_DOWN}/$uri".'">download thumbnail</a> ' .
+			'| tm: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_THUMB}/$uri".'">mark as thumbnail</a> ' .
 			'| ad: <a target="_top" href="'."$URLBASE/${Static::PROXY_ADMIN}/_nouri_".'">proxy admin</a> ' .
-			'| pi: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_PICTURE}/$uri".'">mark as picture page</a> ' .
-			'| do: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_DOWNLOAD}/$uri".'">mark as picture page and download</a> ' .
+			'| pm: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_PICTURE}/$uri".'">mark as picture</a> ' .
+			'| pd: <a target="_top" href="'."$URLBASE/${Static::PROXY_MARK_PIC_DOWN}/$uri".'">download picture</a> ' .
 			']<br><br><p>';
 		    
 		    $content =~ s/<body([^>]*)>/<body$1>$linkline/i;
@@ -458,7 +503,7 @@ my $config = AppConfig->new( { CASE => 1 } );
 $config->define( 'configfile|c=s',    { DEFAULT => '' } );
 $config->define( 'addr|a=s',          { DEFAULT => '127.0.0.1' } );
 $config->define( 'port|p=s',          { DEFAULT => '8080' } );
-$config->define( 'proxy|P=s',         { DEFAULT => $ENV{'http_proxy'}, EXPAND => EXPAND_ENV } );
+$config->define( 'proxy|P=s',         { DEFAULT => $ENV{'HTTP_PROXY'}, EXPAND => EXPAND_ENV } );
 $config->define( 'version|V!' );
 $config->define( 'help|h!' );
 
