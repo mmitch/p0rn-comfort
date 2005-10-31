@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.16 2005-10-30 14:17:35 mitch Exp $
+# $Id: p0rn-bot,v 1.17 2005-10-31 11:50:43 mitch Exp $
 #
 # automatically register pages with p0rn-proxy
 #
@@ -114,7 +114,7 @@ p0rn-bot is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my ($status, $base, $ua, $parser);
 my @pics;
 my @pages;
@@ -154,10 +154,10 @@ sub start_handler
     }
 }
 
-sub parse_page($$)
+sub parse_page($$$)
 # parse an HTML page
 {
-    my ($response, $urls) = (@_);
+    my ($response, $depth, $urls) = (@_);
     
     $base = $response->base;
     @pics = ();
@@ -173,7 +173,11 @@ sub parse_page($$)
 	    $count_pic++;
 	} else {
 	    $status .= ${Static::YELLOW}.'thumbnail';
-	    seturi($dbh, $base, 2, 4);
+	    if ($depth == 0) {
+		seturi($dbh, $base, 2, 1);
+	    } else {
+		seturi($dbh, $base, 2, 4);
+	    }
 	    push @{$urls}, (@pages);
 	    $count_thumb++;
 	}
@@ -211,7 +215,7 @@ sub check_url($$)
 	    seturi($dbh, $url, -1, 4);
             $status .= "$url ${Static::VIOLET}redirect${Static::NORMAL}";
         } else {
-            parse_page( $response, \@urls );
+            parse_page( $response, $depth, \@urls );
         }
     } else {
 	$status .= "$url ${Static::CYAN}failed " . $response->code . ${Static::NORMAL};
