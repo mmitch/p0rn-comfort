@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: p0rn-proxy,v 1.33 2005-10-30 13:50:06 mitch Exp $
+# $Id: p0rn-proxy,v 1.34 2005-10-31 11:50:55 mitch Exp $
 #
 # p0rn-proxy -- a proxy for comfortably browsing p0rn
 #
@@ -176,7 +176,7 @@ p0rn-proxy is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my $URLBASE = $Static::PROXY_CTRL_BASE;
 my ($ua, $dbh);
 
@@ -401,7 +401,7 @@ sub handle_request($)
 	    # return error page
 	    my $content = << "EOF";
 <html><head><title>thumbnail page</title></head><body>
-<a href="$uri">$urishort</a> is considered a thumbnail page and thus not displayed.<br>[
+<a href="$uri">$urishort</a> is considered a thumbnail page (status=$downs[$ref->{status}-1]) and thus not displayed.<br>[
 <a href="$URLBASE/${Static::PROXY_SINGLE_THUMB}/$uri">access once</a>
 | <a href="$URLBASE/${Static::PROXY_UNMARK_THUMB}/$uri">access always</a>
 ]</body></html>
@@ -419,7 +419,7 @@ EOF
 		# return error page
 		my $content = << "EOF";
 <html><head><title>already seen</title></head><body>
-<a href="$uri">$urishort</a> is considered an already seen picture page and thus not displayed.<br>[
+<a href="$uri">$urishort</a> is considered an already seen picture page (status=$downs[$ref->{status}-1]) and thus not displayed.<br>[
 <a href="$URLBASE/${Static::PROXY_SINGLE_PICTURE}/$uri">access once</a>
 | <a href="$URLBASE/${Static::PROXY_UNMARK_PICTURE}/$uri">access always</a>
 ]</body></html>
