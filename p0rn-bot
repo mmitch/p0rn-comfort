@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: p0rn-bot,v 1.17 2005-10-31 11:50:43 mitch Exp $
+# $Id: p0rn-bot,v 1.18 2005-11-18 22:17:45 mitch Exp $
 #
 # automatically register pages with p0rn-proxy
 #
@@ -114,13 +114,19 @@ p0rn-bot is licensed under the GNU GPL.
 ######[ Global Variables ]
 #
 
-my $CVSVERSION = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $CVSVERSION = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 my ($status, $base, $ua, $parser);
 my @pics;
 my @pages;
 my @todo;
 my ($count_pic, $count_thumb, $count_empty) = (0, 0, 0);
 my $dbh;
+
+######[ Global Constants ]
+#
+
+# TODO: make variable/configurable
+my $REDIRECTLIMIT = 7;
 
 ######[ Subroutines ]
 #
@@ -189,11 +195,11 @@ sub parse_page($$$)
     $status .= ${Static::NORMAL};
 }
 
-sub check_url($$);
-sub check_url($$)
+sub check_url($$$);
+sub check_url($$$)
 # fetch an HTML page and process it
 {
-    my ($url, $depth) = @_;
+    my ($url, $depth, $redirect) = @_;
     my @urls;
 
     return unless defined $url;
@@ -202,7 +208,7 @@ sub check_url($$)
     seturi($dbh, $url, -1, 3);
 
     $depth--;
-    $status = sprintf '[%02d] ', $depth;
+    $status = sprintf '[%02d:%02d] ', $depth, $redirect;
 
     my $response = $ua->get($url);
     
@@ -212,12 +218,15 @@ sub check_url($$)
         if ($response->base ne $url) {
             @urls = $response->base;
 	    $depth++;
+	    $redirect++;
 	    seturi($dbh, $url, -1, 4);
             $status .= "$url ${Static::VIOLET}redirect${Static::NORMAL}";
         } else {
+	    $redirect = 0;
             parse_page( $response, $depth, \@urls );
         }
     } else {
+	$redirect = 0;
 	$status .= "$url ${Static::CYAN}failed " . $response->code . ${Static::NORMAL};
 	# mark as finished
 	seturi($dbh, $url, -1, 4);
@@ -238,10 +247,15 @@ sub check_url($$)
 
 	    # fetch this page if
 	    # a) unknown
-	    # b) thumbnail site < queued
+	    # b) thumbnail site < queued && depth left
 	    if ((not exists $ref->{type}) or 
-		($ref->{type} == 2 and $ref->{status} == 1)) {
-		check_url($url, $depth);
+		($ref->{type} == 2 and $ref->{status} == 1) and $depth > 1) {
+
+		if ($redirect > $REDIRECTLIMIT) {
+		    debug "${Static::RED}redirect limit exceeded!${Static::NORMAL}";
+		} else {
+		    check_url($url, $depth, $redirect);
+		}
 	    }
 	}
     }
@@ -325,7 +339,7 @@ while (1) {
     last unless exists $ref->{url};
 
     # work on it
-    check_url($ref->{url}, $config->depth());
+    check_url($ref->{url}, $config->depth(), 0);
 
     unless ($count % 50) {
 	$dbh->disconnect();
